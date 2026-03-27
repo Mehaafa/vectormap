@@ -2,12 +2,13 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import dynamic from 'next/dynamic';
-import { Upload, File, Trash2, LogOut, Sun, Moon, Search, Sliders, Layout, Globe, Activity, Database, ChevronDown, ChevronRight, Beaker, FileText, X, Download, CheckCircle2, ServerCrash, Settings } from 'lucide-react';
+import { Upload, File, Trash2, LogOut, Sun, Moon, Search, Sliders, Layout, Globe, Activity, Database, ChevronDown, ChevronRight, Beaker, FileText, X, Download, CheckCircle2, ServerCrash, Settings, GitFork } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { parseSequenceFile, ParsedSequenceResult } from '@/lib/parsers';
 import AuthModal from '@/components/AuthModal';
 import AddgeneModal from '@/components/AddgeneModal';
 import NCBIModal from '@/components/NCBIModal';
+import HistoryTreeMap from '@/components/HistoryTreeMap';
 
 // Dynamically import OVE to skip Server Side Rendering (SSR) since it relies on browser globals
 const OveEditor = dynamic(() => import('@/components/OveEditor'), { ssr: false });
@@ -320,6 +321,7 @@ export default function VectorMapDashboard() {
           )}
 
           <NavItem icon={<FileText size={18} />} label="Projects Layout" theme={theme} active={currentView === 'Projects'} onClick={() => setCurrentView('Projects')} />
+          <NavItem icon={<GitFork size={18} />} label="History TreeMap" theme={theme} active={currentView === 'History TreeMap'} onClick={() => setCurrentView('History TreeMap')} />
           <NavItem icon={<Activity size={18} />} label="Enzyme Analysis" theme={theme} active={currentView === 'Enzyme Analysis'} onClick={() => setCurrentView('Enzyme Analysis')} />
           <NavItem icon={<Database size={18} />} label="Features DB" theme={theme} active={currentView === 'Features DB'} onClick={() => setCurrentView('Features DB')} />
         </nav>
@@ -426,6 +428,10 @@ export default function VectorMapDashboard() {
           {currentView === 'Dashboard' ? (
             <div className="flex-1 w-full h-full relative z-0 overflow-hidden">
               <OveEditor parsedSequence={parsedData?.parsedSequence} />
+            </div>
+          ) : currentView === 'History TreeMap' ? (
+            <div className="flex-1 w-full h-full relative z-0 overflow-hidden">
+              <HistoryTreeMap theme={theme} />
             </div>
           ) : currentView === 'Projects' ? (
             <div className="flex-1 overflow-auto p-8">
