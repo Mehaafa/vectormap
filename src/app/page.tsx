@@ -27,7 +27,20 @@ export default function VectorMapDashboard() {
   const [isNCBIModalOpen, setIsNCBIModalOpen] = useState(false);
   const [isExternalMenuOpen, setIsExternalMenuOpen] = useState(false);
   const [isVectorsExpanded, setIsVectorsExpanded] = useState(true);
+  const [dashboardTab, setDashboardTab] = useState<'Map' | 'History'>('Map');
+  const [historyOperations, setHistoryOperations] = useState<any[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleSequenceSave = (newSeqData: any) => {
+    // Generate a discrete history operation payload
+    const op = {
+      id: Date.now().toString(),
+      label: 'Sequence Edited',
+      size: newSeqData.sequence.length
+    };
+    setHistoryOperations(prev => [...prev, op]);
+    alert(`Vector Saved & History Tracked! (${op.size} bp)`);
+  };
 
   useEffect(() => {
     // Ping Supabase to check connection (Using auth as it doesn't require specific tables)
@@ -152,6 +165,8 @@ export default function VectorMapDashboard() {
   const handleLoadFile = (fileData: any) => {
     setSequence(fileData.sequence_data.sequence || '');
     setParsedData({ success: true, messages: [], parsedSequence: fileData.sequence_data });
+    setDashboardTab('Map');
+    setHistoryOperations([]); // Reset history when loading a new file
     setCurrentView('Dashboard');
     if (typeof window !== 'undefined') {
       localStorage.setItem('lastViewedVectorId', fileData.id);
@@ -323,7 +338,6 @@ export default function VectorMapDashboard() {
           )}
 
           <NavItem icon={<FileText size={18} />} label="Projects Layout" theme={theme} active={currentView === 'Projects'} onClick={() => setCurrentView('Projects')} />
-          <NavItem icon={<GitFork size={18} />} label="History TreeMap" theme={theme} active={currentView === 'History TreeMap'} onClick={() => setCurrentView('History TreeMap')} />
           <NavItem icon={<Activity size={18} />} label="Enzyme Analysis" theme={theme} active={currentView === 'Enzyme Analysis'} onClick={() => setCurrentView('Enzyme Analysis')} />
           <NavItem icon={<Database size={18} />} label="Features DB" theme={theme} active={currentView === 'Features DB'} onClick={() => setCurrentView('Features DB')} />
         </nav>
@@ -428,12 +442,35 @@ export default function VectorMapDashboard() {
         {/* Workspace Layout */}
         <div className={`flex-1 overflow-hidden flex flex-col ${theme === 'dark' ? '' : 'bg-gray-50'}`}>
           {currentView === 'Dashboard' ? (
-            <div className="flex-1 w-full h-full relative z-0 overflow-hidden">
-              <OveEditor parsedSequence={parsedData?.parsedSequence} />
-            </div>
-          ) : currentView === 'History TreeMap' ? (
-            <div className="flex-1 w-full h-full relative z-0 overflow-hidden">
-              <HistoryTreeMap theme={theme} />
+            <div className="flex-1 flex flex-col h-full overflow-hidden relative">
+              {/* Floating Tab Bar Container */}
+              <div className={`absolute top-4 left-1/2 -translate-x-1/2 z-20 flex items-center p-1 rounded-xl border shadow-lg backdrop-blur-md ${theme === 'dark' ? 'bg-gray-800/80 border-gray-700' : 'bg-white/80 border-gray-200'}`}>
+                <button 
+                  onClick={() => setDashboardTab('Map')}
+                  className={`px-5 py-2 text-sm font-semibold rounded-lg transition-all ${dashboardTab === 'Map' ? (theme === 'dark' ? 'bg-indigo-600 text-white shadow-sm' : 'bg-indigo-500 text-white shadow-sm') : (theme === 'dark' ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700')}`}
+                >
+                  🧬 Vector Map
+                </button>
+                <button 
+                  onClick={() => setDashboardTab('History')}
+                  className={`px-5 py-2 text-sm font-semibold rounded-lg transition-all flex items-center space-x-2 ${dashboardTab === 'History' ? (theme === 'dark' ? 'bg-indigo-600 text-white shadow-sm' : 'bg-indigo-500 text-white shadow-sm') : (theme === 'dark' ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700')}`}
+                >
+                  <span>🌳 History Tree</span>
+                  {historyOperations.length > 0 && (
+                    <span className="bg-white/20 px-1.5 py-0.5 rounded-full text-[10px] ml-1">{historyOperations.length}</span>
+                  )}
+                </button>
+              </div>
+
+              <div className="flex-1 relative w-full h-full">
+                {/* Visual swap vs Unmounting to preserve workspace states */}
+                <div className={`w-full h-full absolute inset-0 ${dashboardTab === 'Map' ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'}`}>
+                  <OveEditor parsedSequence={parsedData?.parsedSequence} onSequenceSave={(seq: any) => handleSequenceSave(seq)} />
+                </div>
+                <div className={`w-full h-full absolute inset-0 ${dashboardTab === 'History' ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'}`}>
+                  <HistoryTreeMap theme={theme} activeVectorName={parsedData?.parsedSequence?.name || 'Untitled Vector'} externalOperations={historyOperations} />
+                </div>
+              </div>
             </div>
           ) : currentView === 'Projects' ? (
             <div className="flex-1 overflow-auto p-8">

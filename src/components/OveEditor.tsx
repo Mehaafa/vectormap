@@ -3,7 +3,7 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 
-export default function OveEditor({ parsedSequence }: { parsedSequence?: any }) {
+export default function OveEditor({ parsedSequence, onSequenceSave }: { parsedSequence?: any, onSequenceSave?: (seq: any) => void }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [isLoaded, setIsLoaded] = useState(false);
 
@@ -50,6 +50,12 @@ export default function OveEditor({ parsedSequence }: { parsedSequence?: any }) 
         isFullscreen: false, // Ensure it stays within our custom dashboard frame!
         showMenuBar: true,
         readOnly: false, // 🔥 Force unlocking the editor to allow pasting/editing
+        onSave: function(event: any, sequenceData: any, editorState: any, onSuccessCallback: any) {
+          if (onSequenceSave) {
+            onSequenceSave(sequenceData);
+          }
+          onSuccessCallback();
+        },
         ToolBarProps: {
           toolList: [
             "undoTool", "redoTool", "cutsiteTool", "featureTool", "oligoTool", "orfTool", "editTool", "findTool", "visibilityTool"

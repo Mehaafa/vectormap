@@ -1,5 +1,5 @@
 /* eslint-disable */
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { ReactFlow, Controls, Background, applyNodeChanges, applyEdgeChanges, Node, Edge, Panel, Handle, Position } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { Scissors, Trash2, Save, FileText } from 'lucide-react';
@@ -35,7 +35,7 @@ const initialEdges: Edge[] = [
   { id: 'e4-5', source: '4', target: '5', animated: true, style: { stroke: '#10b981', strokeWidth: 3 } },
 ];
 
-export default function HistoryTreeMap({ theme }: { theme: string }) {
+export default function HistoryTreeMap({ theme, activeVectorName, externalOperations }: { theme: string, activeVectorName?: string, externalOperations?: any[] }) {
   const [nodes, setNodes] = useState<Node[]>(initialNodes);
   const [edges, setEdges] = useState<Edge[]>(initialEdges);
   const [selectedNode, setSelectedNode] = useState<Node | null>(null);
@@ -43,6 +43,44 @@ export default function HistoryTreeMap({ theme }: { theme: string }) {
   const onNodesChange = useCallback((changes: any) => setNodes((nds) => applyNodeChanges(changes, nds)), []);
   const onEdgesChange = useCallback((changes: any) => setEdges((eds) => applyEdgeChanges(changes, eds)), []);
   
+  // Sync external operations from OVE into the tree
+  useEffect(() => {
+    const baseNodes = [...initialNodes];
+    if (activeVectorName) {
+      baseNodes[0] = { ...baseNodes[0], data: { ...baseNodes[0].data, label: activeVectorName } };
+    }
+
+    if (externalOperations && externalOperations.length > 0) {
+      const extNodes = externalOperations.map((op, i) => ({
+        id: op.id,
+        type: 'custom',
+        position: { x: 250, y: (i + 1) * 160 + 400 },
+        data: {
+          label: op.label,
+          subLabel: `${op.size} bp`,
+          icon: <span className="text-xl">✍️</span>
+        }
+      }));
+      
+      const extEdges = externalOperations.map((op, i) => {
+        const sourceId = i === 0 ? '5' : externalOperations[i-1].id; // link to last mock node '5'
+        return {
+          id: `e-${sourceId}-${op.id}`,
+          source: sourceId,
+          target: op.id,
+          animated: true,
+          style: { stroke: '#f59e0b', strokeWidth: 2 }
+        };
+      });
+      
+      setNodes([...baseNodes, ...extNodes]);
+      setEdges([...initialEdges, ...extEdges]);
+    } else {
+      setNodes(baseNodes);
+      setEdges(initialEdges);
+    }
+  }, [externalOperations, activeVectorName]);
+
   const onNodeClick = (event: React.MouseEvent, node: Node) => {
     setSelectedNode(node);
   };
