@@ -170,8 +170,8 @@ export default function VectorMapDashboard() {
       {/* Sidebar */}
       <aside className={`w-64 flex flex-col border-r transition-colors duration-300 ${theme === 'dark' ? 'border-gray-800 bg-gray-950' : 'border-gray-300 bg-white'}`}>
         <div className={`h-16 flex items-center px-6 border-b transition-colors duration-300 ${theme === 'dark' ? 'border-gray-800' : 'border-gray-200'}`}>
-          <Beaker className="w-6 h-6 text-indigo-500 mr-3 shrink-0" />
-          <h1 className="text-base font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 to-purple-500 whitespace-nowrap">
+          <Beaker className="w-4 h-4 text-indigo-500 mr-2 shrink-0" />
+          <h1 className="text-sm font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 to-purple-500 whitespace-nowrap">
             VectorMap Pro
           </h1>
         </div>
