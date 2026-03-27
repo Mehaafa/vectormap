@@ -7,6 +7,7 @@ import { supabase } from '@/lib/supabase';
 import { parseSequenceFile, ParsedSequenceResult } from '@/lib/parsers';
 import AuthModal from '@/components/AuthModal';
 import AddgeneModal from '@/components/AddgeneModal';
+import NCBIModal from '@/components/NCBIModal';
 
 // Dynamically import OVE to skip Server Side Rendering (SSR) since it relies on browser globals
 const OveEditor = dynamic(() => import('@/components/OveEditor'), { ssr: false });
@@ -20,6 +21,8 @@ export default function VectorMapDashboard() {
   const [session, setSession] = useState<any>(null);
   const [savedFiles, setSavedFiles] = useState<any[]>([]);
   const [isAddgeneModalOpen, setIsAddgeneModalOpen] = useState(false);
+  const [isNCBIModalOpen, setIsNCBIModalOpen] = useState(false);
+  const [isExternalMenuOpen, setIsExternalMenuOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -75,6 +78,39 @@ export default function VectorMapDashboard() {
       fetchFiles();
     }
   }, [session]);
+
+  const handleLoadNCBIVector = async (vectorData: any) => {
+    try {
+      const parsed = await parseSequenceFile(vectorData.gbText, `${vectorData.accession}.gb`);
+      if (parsed.success && parsed.parsedSequence) {
+        
+        const { error: insertError } = await supabase.from('sequences').insert({
+          user_id: session?.user?.id,
+          name: `${vectorData.accession} - ${vectorData.name.substring(0,30)}...`,
+          type: 'DNA',
+          size_bp: parsed.parsedSequence.size || vectorData.size_bp,
+          is_circular: parsed.parsedSequence.circular || true,
+          sequence_data: parsed.parsedSequence
+        });
+        
+        if (insertError) alert('NCBI import DB error: ' + insertError.message);
+        else {
+          const fetchFiles = async () => {
+            const { data } = await supabase.from('sequences').select('id, name, size_bp, created_at, sequence_data').order('created_at', { ascending: false });
+            if (data) setSavedFiles(data);
+          };
+          await fetchFiles();
+          setSequence(parsed.parsedSequence.sequence || '');
+          setParsedData({ success: true, messages: [], parsedSequence: parsed.parsedSequence });
+          setCurrentView('Dashboard');
+        }
+      } else {
+        alert("Failed to parse NCBI GenBank format");
+      }
+    } catch (err: any) {
+      alert("Error processing NCBI file: " + err.message);
+    }
+  };
 
   const handleLoadAddgeneVector = async (vectorData: any) => {
     // Save to local cloud permanently
@@ -288,6 +324,12 @@ export default function VectorMapDashboard() {
           onSelectVector={handleLoadAddgeneVector} 
           theme={theme} 
         />
+        <NCBIModal 
+          isOpen={isNCBIModalOpen} 
+          onClose={() => setIsNCBIModalOpen(false)} 
+          onSelectVector={handleLoadNCBIVector} 
+          theme={theme} 
+        />
         
         {/* Header */}
         <header className={`h-16 flex items-center justify-between px-8 border-b transition-colors duration-300 ${theme === 'dark' ? 'border-gray-800 bg-gray-900/40 backdrop-blur-md' : 'border-gray-200 bg-white/60 backdrop-blur-md'}`}>
@@ -310,13 +352,34 @@ export default function VectorMapDashboard() {
               accept=".gb,.gbk,.fasta,.fas,.dna" 
               onChange={handleFileUpload} 
             />
-            <button 
-              onClick={() => setIsAddgeneModalOpen(true)}
-              className={`flex items-center space-x-2 px-4 py-1.5 rounded-lg text-[13px] font-medium transition-all shadow-md ${theme === 'dark' ? 'bg-indigo-500 hover:bg-indigo-400 text-white' : 'bg-indigo-100 hover:bg-indigo-200 text-indigo-700'}`}
-            >
-              <Globe size={15} />
-              <span>Import from Addgene</span>
-            </button>
+            <div className="relative">
+              <button 
+                onClick={() => setIsExternalMenuOpen(!isExternalMenuOpen)}
+                className={`flex items-center space-x-2 px-4 py-1.5 rounded-lg text-[13px] font-medium transition-all shadow-md ${theme === 'dark' ? 'bg-indigo-500 hover:bg-indigo-400 text-white' : 'bg-indigo-100 hover:bg-indigo-200 text-indigo-700'}`}
+              >
+                <Globe size={15} />
+                <span>Import External</span>
+              </button>
+              
+              {isExternalMenuOpen && (
+                <div className={`absolute right-0 mt-2 w-56 rounded-xl shadow-xl overflow-hidden border z-50 animate-in fade-in slide-in-from-top-2 ${theme === 'dark' ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
+                  <button 
+                    onClick={() => { setIsAddgeneModalOpen(true); setIsExternalMenuOpen(false); }}
+                    className={`w-full flex items-center px-4 py-3 text-xs transition-colors text-left ${theme === 'dark' ? 'text-gray-200 hover:bg-gray-700' : 'text-gray-700 hover:bg-indigo-50'}`}
+                  >
+                    <span className="font-semibold text-indigo-500 mr-2 w-4 text-center">A</span>
+                    Addgene Data (Mock)
+                  </button>
+                  <button 
+                    onClick={() => { setIsNCBIModalOpen(true); setIsExternalMenuOpen(false); }}
+                    className={`w-full flex items-center px-4 py-3 text-xs transition-colors text-left border-t ${theme === 'dark' ? 'border-gray-700 text-gray-200 hover:bg-gray-700' : 'border-gray-100 text-gray-700 hover:bg-indigo-50'}`}
+                  >
+                    <span className="font-semibold text-emerald-500 mr-2 w-4 text-center">N</span>
+                    NCBI Data (Live API)
+                  </button>
+                </div>
+              )}
+            </div>
             <button 
               onClick={() => fileInputRef.current?.click()}
               className={`flex items-center space-x-2 px-4 py-1.5 rounded-lg text-[13px] font-medium transition-all shadow-md ${theme === 'dark' ? 'bg-gray-800 hover:bg-gray-700 text-white' : 'bg-gray-800 hover:bg-gray-700 text-white'}`}
