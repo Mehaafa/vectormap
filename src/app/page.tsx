@@ -148,7 +148,7 @@ export default function VectorMapDashboard() {
               {/* Left Column (Canvas) */}
               <div className="col-span-12 lg:col-span-7 flex flex-col space-y-4">
                 <div className="flex-1 rounded-2xl border border-gray-800 bg-gray-900/30 overflow-hidden relative shadow-2xl">
-                  <CanvasMap sequence={sequence} />
+                  <CanvasMap sequence={sequence} parsedSequence={parsedData?.parsedSequence} />
                 </div>
               </div>
 

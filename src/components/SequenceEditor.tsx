@@ -17,8 +17,11 @@ export default function SequenceEditor({ sequence, onChange }: SequenceEditorPro
       <div className="flex-1 p-4 overflow-y-auto">
         <textarea
           className="w-full h-full text-sm font-mono text-emerald-400 bg-transparent border-none resize-none focus:ring-0 leading-relaxed"
-          value={sequence}
-          onChange={(e) => onChange(e.target.value.toUpperCase().replace(/[^ATCGU]/g, ''))}
+          value={sequence.replace(/(.{10})/g, '$1 ')}
+          onChange={(e) => {
+            const rawSequence = e.target.value.replace(/\s+/g, '').toUpperCase().replace(/[^ATCGU]/g, '');
+            onChange(rawSequence);
+          }}
           spellCheck={false}
           style={{
             wordBreak: 'break-all',
