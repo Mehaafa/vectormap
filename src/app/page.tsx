@@ -54,6 +54,20 @@ export default function VectorMapDashboard() {
         
         if (data && !error) {
           setSavedFiles(data);
+          
+          if (data.length > 0) {
+            let fileToLoad = data[0];
+            if (typeof window !== 'undefined') {
+              const lastId = localStorage.getItem('lastViewedVectorId');
+              if (lastId) {
+                const found = data.find(f => f.id === lastId);
+                if (found) fileToLoad = found;
+              }
+            }
+            // Load the determined file automatically!
+            setSequence(fileToLoad.sequence_data.sequence || '');
+            setParsedData({ success: true, messages: [], parsedSequence: fileToLoad.sequence_data });
+          }
         }
       };
       fetchFiles();
@@ -64,6 +78,9 @@ export default function VectorMapDashboard() {
     setSequence(fileData.sequence_data.sequence || '');
     setParsedData({ success: true, messages: [], parsedSequence: fileData.sequence_data });
     setCurrentView('Dashboard');
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('lastViewedVectorId', fileData.id);
+    }
   };
 
   const handleDeleteFile = async (e: React.MouseEvent, fileId: string) => {
@@ -73,6 +90,9 @@ export default function VectorMapDashboard() {
     const { error } = await supabase.from('sequences').delete().eq('id', fileId);
     if (!error) {
       setSavedFiles(prev => prev.filter(f => f.id !== fileId));
+      if (typeof window !== 'undefined' && localStorage.getItem('lastViewedVectorId') === fileId) {
+        localStorage.removeItem('lastViewedVectorId');
+      }
       // Reset view if they delete the file they are currently viewing
       if (parsedData?.parsedSequence?.name === savedFiles.find(f => f.id === fileId)?.name) {
         setParsedData(null);
@@ -151,7 +171,7 @@ export default function VectorMapDashboard() {
       <aside className={`w-64 flex flex-col border-r transition-colors duration-300 ${theme === 'dark' ? 'border-gray-800 bg-gray-950' : 'border-gray-300 bg-white'}`}>
         <div className={`h-16 flex items-center px-6 border-b transition-colors duration-300 ${theme === 'dark' ? 'border-gray-800' : 'border-gray-200'}`}>
           <Beaker className="w-6 h-6 text-indigo-500 mr-3 shrink-0" />
-          <h1 className="text-lg font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 to-purple-500 whitespace-nowrap">
+          <h1 className="text-base font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 to-purple-500 whitespace-nowrap">
             VectorMap Pro
           </h1>
         </div>
@@ -163,7 +183,7 @@ export default function VectorMapDashboard() {
           {currentView === 'Dashboard' && (
             <div className={`pl-4 py-2 space-y-1 border-l-2 ml-4 mb-2 ${theme === 'dark' ? 'border-gray-800' : 'border-gray-200'}`}>
               <div className={`text-[10px] font-bold tracking-wider uppercase mb-2 flex items-center justify-between ${theme === 'dark' ? 'text-gray-500' : 'text-gray-400'}`}>
-                <span>My Cloud Vectors</span>
+                <span>My Vectors</span>
                 <span className={`px-1.5 py-0.5 rounded-full text-[9px] ${theme === 'dark' ? 'bg-gray-800 text-gray-300' : 'bg-gray-200 text-gray-600'}`}>{savedFiles.length}</span>
               </div>
               
