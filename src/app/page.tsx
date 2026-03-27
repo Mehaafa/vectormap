@@ -1,7 +1,7 @@
 /* eslint-disable */
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import dynamic from 'next/dynamic';
 import { Upload, File, Trash2, LogOut, Sun, Moon, Search, Sliders, Layout, Globe, Activity, Database, ChevronDown, ChevronRight, Beaker, FileText, X, Download, CheckCircle2, ServerCrash, Settings, GitFork } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
@@ -37,7 +37,7 @@ export default function VectorMapDashboard() {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleSequenceSave = async (newSeqData: any) => {
+  const handleSequenceSave = useCallback(async (newSeqData: any) => {
     const actionLabel = newSeqData._action || 'Sequence Edited';
     
     if (actionLabel === 'Manual Save') {
@@ -74,7 +74,7 @@ export default function VectorMapDashboard() {
       size: newSeqData.sequence.length
     };
     setHistoryOperations(prev => [...prev, op]);
-  };
+  }, [activeVectorId]);
 
   useEffect(() => {
     // Ping Supabase to check connection (Using auth as it doesn't require specific tables)
