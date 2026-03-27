@@ -9,10 +9,11 @@ import { parseSequenceFile, ParsedSequenceResult } from '@/lib/parsers';
 import AuthModal from '@/components/AuthModal';
 import AddgeneModal from '@/components/AddgeneModal';
 import NCBIModal from '@/components/NCBIModal';
-import HistoryTreeMap from '@/components/HistoryTreeMap';
 
-// Dynamically import OVE to skip Server Side Rendering (SSR) since it relies on browser globals
+// Dynamically import complex client modules to skip Server Side Rendering (SSR) 
+// since they rely on browser globals like window or internal DOM metrics.
 const OveEditor = dynamic(() => import('@/components/OveEditor'), { ssr: false });
+const HistoryTreeMap = dynamic(() => import('@/components/HistoryTreeMap'), { ssr: false });
 
 export default function VectorMapDashboard() {
   const [sequence, setSequence] = useState<string>('ATGCGTACGTAGCTAGCTAGCATCGATCGATCGATCGAATGCGTACGTAGCTAGCTAGCATCGATCGATCGATCGAATGCGTACGTAGCTAGCTAGCATCGATCGATCGATCGA');
