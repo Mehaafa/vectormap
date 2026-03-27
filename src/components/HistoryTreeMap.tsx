@@ -3,15 +3,16 @@ import React, { useState, useCallback, useEffect } from 'react';
 import { ReactFlow, Controls, Background, applyNodeChanges, applyEdgeChanges, Node, Edge, Panel, Handle, Position } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { Scissors, Trash2, Save, FileText } from 'lucide-react';
+import PlasmidMiniMap from './PlasmidMiniMap';
 
 const CustomNode = ({ data, isConnectable }: any) => {
   return (
     <div className={`shadow-xl rounded-xl border-2 bg-white flex flex-col items-center overflow-hidden w-52 ${data.isRoot ? 'border-indigo-500' : 'border-gray-200'}`}>
       <Handle type="target" position={Position.Top} isConnectable={isConnectable} className="w-3 h-3 bg-indigo-500" />
-      {/* Plasmid Snapshot Thumbnail (or fallback icon) */}
-      {data.snapshot ? (
-        <div className="w-full h-36 flex items-center justify-center bg-gray-50 border-b border-gray-100 overflow-hidden">
-          <img src={data.snapshot} alt="Plasmid State" className="w-full h-full object-contain" />
+      {/* Plasmid Mini-Map Thumbnail (data-driven) or fallback icon */}
+      {data.sequenceData ? (
+        <div className="w-full flex items-center justify-center bg-white border-b border-gray-100 py-2">
+          <PlasmidMiniMap sequenceData={data.sequenceData} size={120} />
         </div>
       ) : (
         <div className="w-full h-28 flex items-center justify-center bg-indigo-50 border-b border-gray-100">
@@ -60,8 +61,8 @@ export default function HistoryTreeMap({ theme, activeVectorName, externalOperat
         data: {
           label: op.label,
           subLabel: `${op.size} bp`,
-          snapshot: op.snapshot,  // base64 plasmid screenshot
-          icon: <span className="text-xl">✍️</span>
+          sequenceData: op.sequenceData,  // Pass real sequence data for PlasmidMiniMap
+          icon: <span className="text-2xl">✍️</span>
         }
       }));
       
