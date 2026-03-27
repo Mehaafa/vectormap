@@ -89,54 +89,57 @@ export default function OveEditor({ parsedSequence, onSequenceSave }: { parsedSe
 
   useEffect(() => {
     // Live Redux Auto-Tracking Hook
-    // Listens to OVE's internal Redux store to instantly catch Pastes, Deletes, and Edits!
-    if (typeof window === 'undefined' || !(window as any).store) return;
+    // Because OVE is loaded dynamically, window.store may not exist precisely when this effect first runs.
+    if (typeof window === 'undefined' || !isLoaded) return;
 
-    let baselineSequence = parsedSequence?.sequence || '';
-    
-    // Slight debounce timer to prevent Rapid-fire keystroke node bloat
     let debounceTimer: NodeJS.Timeout;
+    let unsubscribe: any;
+    let baselineSequence = parsedSequence?.sequence || '';
 
-    const unsubscribe = (window as any).store.subscribe(() => {
-      const state = (window as any).store.getState();
-      const editorState = state?.VectorEditor?.VectorMapProto;
-      if (!editorState) return;
+    // Poll every 500ms until the Redux store is definitively hooked onto the window object
+    const checkStoreInterval = setInterval(() => {
+      const store = (window as any).store;
+      if (store) {
+        clearInterval(checkStoreInterval); // Found it! Stop polling.
 
-      // OVE uses sequenceDataHistory for undo/redo stacks
-      const currentSeqData = editorState.sequenceDataHistory?.present || editorState.sequenceData;
-      if (!currentSeqData || !currentSeqData.sequence) return;
+        unsubscribe = store.subscribe(() => {
+          const state = store.getState();
+          const editorState = state?.VectorEditor?.VectorMapProto;
+          if (!editorState) return;
 
-      const latestSequence = currentSeqData.sequence;
-      
-      // If the actual DNA string mutated (e.g. pasted a fragment, deleted bases)
-      if (latestSequence !== baselineSequence && baselineSequence !== '') {
-        const diffSize = latestSequence.length - baselineSequence.length;
-        
-        // Define Action Label
-        let actionLabel = 'Sequence Edited';
-        if (diffSize > 0) actionLabel = `Fragment Inserted (+${diffSize} bp)`;
-        else if (diffSize < 0) actionLabel = `Fragment Deleted (${diffSize} bp)`;
+          const currentSeqData = editorState.sequenceDataHistory?.present || editorState.sequenceData;
+          if (!currentSeqData || !currentSeqData.sequence) return;
 
-        // Only track meaningful DNA changes, not just metadata/feature coloring!
-        baselineSequence = latestSequence; // Update instantly to prevent dupe triggers
+          const latestSequence = currentSeqData.sequence;
+          
+          if (latestSequence !== baselineSequence && baselineSequence !== '') {
+            const diffSize = latestSequence.length - baselineSequence.length;
+            
+            let actionLabel = 'Sequence Edited';
+            if (diffSize > 0) actionLabel = `Fragment Inserted (+${diffSize} bp)`;
+            else if (diffSize < 0) actionLabel = `Fragment Deleted (${diffSize} bp)`;
 
-        clearTimeout(debounceTimer);
-        debounceTimer = setTimeout(() => {
-          if (onSequenceSave) {
-            onSequenceSave({...currentSeqData, _action: actionLabel});
+            baselineSequence = latestSequence;
+
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(() => {
+              if (onSequenceSave) {
+                onSequenceSave({...currentSeqData, _action: actionLabel});
+              }
+            }, 300);
+          } else if (baselineSequence === '' && latestSequence) {
+            baselineSequence = latestSequence;
           }
-        }, 300); // 300ms debounce
-      } else if (baselineSequence === '' && latestSequence) {
-        // First load initialization
-        baselineSequence = latestSequence;
+        });
       }
-    });
+    }, 500);
 
     return () => {
-      unsubscribe();
+      clearInterval(checkStoreInterval);
+      if (unsubscribe) unsubscribe();
       clearTimeout(debounceTimer);
     };
-  }, [parsedSequence, onSequenceSave]);
+  }, [isLoaded, parsedSequence, onSequenceSave]);
 
   return (
     <div className="w-full h-full relative bg-white overflow-hidden flex flex-col">
