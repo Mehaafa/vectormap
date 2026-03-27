@@ -241,13 +241,8 @@ export default function VectorMapDashboard() {
         {/* Workspace Layout */}
         <div className={`flex-1 overflow-hidden flex flex-col ${theme === 'dark' ? '' : 'bg-gray-50'}`}>
           {currentView === 'Dashboard' ? (
-            <div className="flex-1 p-6 grid grid-cols-12 gap-6 overflow-hidden">
-              {/* Center Area: Full width OVE Editor */}
-              <div className="col-span-12 flex-col space-y-4">
-                <div className="w-full h-[800px] bg-white rounded-xl shadow-2xl border border-gray-800 relative z-0">
-                  <OveEditor parsedSequence={parsedData?.parsedSequence} />
-                </div>
-              </div>
+            <div className="flex-1 w-full h-full relative z-0 overflow-hidden">
+              <OveEditor parsedSequence={parsedData?.parsedSequence} />
             </div>
           ) : currentView === 'Projects' ? (
             <div className="flex-1 overflow-auto p-8">

@@ -77,7 +77,7 @@ export default function OveEditor({ parsedSequence }: { parsedSequence?: any }) 
   }, [isLoaded, parsedSequence]);
 
   return (
-    <div className="w-full h-full relative bg-white overflow-hidden rounded-xl border border-gray-800 shadow-2xl flex flex-col" style={{ minHeight: '800px' }}>
+    <div className="w-full h-full relative bg-white overflow-hidden flex flex-col">
       {!isLoaded && (
         <div className="absolute inset-0 flex items-center justify-center bg-gray-900 z-50">
           <div className="text-white flex flex-col items-center">
