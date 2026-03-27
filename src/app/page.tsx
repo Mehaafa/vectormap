@@ -114,10 +114,10 @@ export default function VectorMapDashboard() {
 
 function NavItem({ icon, label, active = false }: { icon: React.ReactNode, label: string, active?: boolean }) {
   return (
-    <a href="#" className={`flex items-center space-x-3 px-3 py-2.5 rounded-lg transition-colors ${active ? 'bg-indigo-500/10 text-indigo-400 font-medium' : 'text-gray-400 hover:bg-gray-800 hover:text-gray-200'}`}>
+    <button className={`w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg transition-colors ${active ? 'bg-indigo-500/10 text-indigo-400 font-medium' : 'text-gray-400 hover:bg-gray-800 hover:text-gray-200'}`}>
       {icon}
       <span>{label}</span>
-    </a>
+    </button>
   );
 }
 
