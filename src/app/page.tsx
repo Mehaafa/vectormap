@@ -29,13 +29,48 @@ export default function VectorMapDashboard() {
   const [isVectorsExpanded, setIsVectorsExpanded] = useState(true);
   const [dashboardTab, setDashboardTab] = useState<'Map' | 'History'>('Map');
   const [historyOperations, setHistoryOperations] = useState<any[]>([]);
+  const [activeVectorId, setActiveVectorId] = useState<string | null>(null);
+
+  // Use Ref to bypass deeply nested stale closures inside OVE's async save hook
+  const historyOperationsRef = useRef<any[]>([]);
+  useEffect(() => { historyOperationsRef.current = historyOperations; }, [historyOperations]);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleSequenceSave = (newSeqData: any) => {
-    // Generate a discrete history operation payload
+  const handleSequenceSave = async (newSeqData: any) => {
+    const actionLabel = newSeqData._action || 'Sequence Edited';
+    
+    if (actionLabel === 'Manual Save') {
+      if (activeVectorId) {
+        try {
+          const { error } = await supabase.from('sequences').update({
+            sequence_data: newSeqData,
+            history_nodes: historyOperationsRef.current,
+            size_bp: newSeqData.sequence.length
+          }).eq('id', activeVectorId);
+          
+          if (error) throw error;
+          alert('Vector Sequence & History Tree successfully synced to Supabase Cloud!');
+          
+          // Refresh the Projects list to update sizes
+          const { data } = await supabase.from('sequences')
+            .select('id, name, size_bp, created_at, sequence_data, history_nodes')
+            .order('created_at', { ascending: false });
+          if (data) setSavedFiles(data);
+          
+        } catch (err: any) {
+          alert('Failed to save to cloud: ' + err.message);
+        }
+      } else {
+        alert('Active Vector ID not found. Could not sync to cloud.');
+      }
+      return; 
+    }
+
+    // Auto-tracked Live Sequence Edit: Push silently to local component state array
     const op = {
       id: Date.now().toString(),
-      label: newSeqData._action || 'Sequence Edited',
+      label: actionLabel,
       size: newSeqData.sequence.length
     };
     setHistoryOperations(prev => [...prev, op]);
@@ -70,7 +105,7 @@ export default function VectorMapDashboard() {
     if (session) {
       const fetchFiles = async () => {
         const { data, error } = await supabase.from('sequences')
-          .select('id, name, size_bp, created_at, sequence_data')
+          .select('id, name, size_bp, created_at, sequence_data, history_nodes')
           .order('created_at', { ascending: false });
         
         if (data && !error) {
@@ -88,6 +123,8 @@ export default function VectorMapDashboard() {
             // Load the determined file automatically!
             setSequence(fileToLoad.sequence_data.sequence || '');
             setParsedData({ success: true, messages: [], parsedSequence: fileToLoad.sequence_data });
+            setActiveVectorId(fileToLoad.id);
+            setHistoryOperations(fileToLoad.history_nodes || []);
           }
         }
       };
@@ -100,19 +137,21 @@ export default function VectorMapDashboard() {
       const parsed = await parseSequenceFile(vectorData.gbText, `${vectorData.accession}.gb`);
       if (parsed.success && parsed.parsedSequence) {
         
-        const { error: insertError } = await supabase.from('sequences').insert({
+        const { data: newRow, error: insertError } = await supabase.from('sequences').insert({
           user_id: session?.user?.id,
-          name: `${vectorData.accession} - ${vectorData.name.substring(0,30)}...`,
+          name: vectorData.name,
           type: 'DNA',
           size_bp: parsed.parsedSequence.size || vectorData.size_bp,
           is_circular: parsed.parsedSequence.circular || true,
-          sequence_data: parsed.parsedSequence
-        });
+          sequence_data: parsed.parsedSequence,
+          history_nodes: []
+        }).select('id').single();
         
-        if (insertError) alert('NCBI import DB error: ' + insertError.message);
+        if (insertError) alert('DB Insert Error: ' + insertError.message);
         else {
+          if (newRow) setActiveVectorId(newRow.id);
           const fetchFiles = async () => {
-            const { data } = await supabase.from('sequences').select('id, name, size_bp, created_at, sequence_data').order('created_at', { ascending: false });
+            const { data } = await supabase.from('sequences').select('id, name, size_bp, created_at, sequence_data, history_nodes').order('created_at', { ascending: false });
             if (data) setSavedFiles(data);
           };
           await fetchFiles();
@@ -130,22 +169,24 @@ export default function VectorMapDashboard() {
 
   const handleLoadAddgeneVector = async (vectorData: any) => {
     // Save to local cloud permanently
-    const { error: insertError } = await supabase.from('sequences').insert({
+    const { data: newRow, error: insertError } = await supabase.from('sequences').insert({
       user_id: session?.user?.id,
       name: vectorData.sequence_data.name,
       type: 'DNA',
       size_bp: vectorData.sequence_data.size,
       is_circular: vectorData.sequence_data.circular,
-      sequence_data: vectorData.sequence_data
-    });
+      sequence_data: vectorData.sequence_data,
+      history_nodes: []
+    }).select('id').single();
     
     if (insertError) {
       alert('Addgene import DB error: ' + insertError.message);
     } else {
+      if (newRow) setActiveVectorId(newRow.id);
       // Refresh sidebar list
       const fetchFiles = async () => {
         const { data } = await supabase.from('sequences')
-          .select('id, name, size_bp, created_at, sequence_data')
+          .select('id, name, size_bp, created_at, sequence_data, history_nodes')
           .order('created_at', { ascending: false });
         if (data) setSavedFiles(data);
       };
@@ -165,7 +206,8 @@ export default function VectorMapDashboard() {
     setSequence(fileData.sequence_data.sequence || '');
     setParsedData({ success: true, messages: [], parsedSequence: fileData.sequence_data });
     setDashboardTab('Map');
-    setHistoryOperations([]); // Reset history when loading a new file
+    setActiveVectorId(fileData.id);
+    setHistoryOperations(fileData.history_nodes || []); // Restore history from cloud or initialize
     setCurrentView('Dashboard');
     if (typeof window !== 'undefined') {
       localStorage.setItem('lastViewedVectorId', fileData.id);
@@ -208,23 +250,25 @@ export default function VectorMapDashboard() {
         if (dbStatus === 'connected') {
           try {
             // Insert Sequence Directly (Bypass Project Table constraints)
-            const { error: insertError } = await supabase.from('sequences').insert({
+            const { data: newRow, error: insertError } = await supabase.from('sequences').insert({
               user_id: session?.user?.id,
               name: result.parsedSequence.name || file.name,
               type: 'DNA',
               size_bp: result.parsedSequence.size,
               is_circular: result.parsedSequence.circular,
-              sequence_data: result.parsedSequence
-            });
+              sequence_data: result.parsedSequence,
+              history_nodes: []
+            }).select('id').single();
             
             if (insertError) {
               console.error('Error saving to Supabase:', insertError);
               alert('데이터베이스 저장 실패: ' + insertError.message);
             } else {
               console.log('Successfully saved to Supabase Sequences table!');
+              if (newRow) setActiveVectorId(newRow.id);
               // Auto-refresh the sidebar with the newly parsed vector
               const { data } = await supabase.from('sequences')
-                .select('id, name, size_bp, created_at, sequence_data')
+                .select('id, name, size_bp, created_at, sequence_data, history_nodes')
                 .order('created_at', { ascending: false });
               if (data) setSavedFiles(data);
             }
