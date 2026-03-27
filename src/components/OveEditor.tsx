@@ -51,8 +51,9 @@ export default function OveEditor({ parsedSequence, onSequenceSave }: { parsedSe
         showMenuBar: true,
         readOnly: false, // 🔥 Force unlocking the editor to allow pasting/editing
         onSave: function(event: any, sequenceData: any, editorState: any, onSuccessCallback: any) {
+          // Manual Save Hook (Fallback)
           if (onSequenceSave) {
-            onSequenceSave(sequenceData);
+            onSequenceSave({...sequenceData, _action: 'Manual Save'});
           }
           onSuccessCallback();
         },
@@ -85,6 +86,57 @@ export default function OveEditor({ parsedSequence, onSequenceSave }: { parsedSe
       }
     }
   }, [isLoaded, parsedSequence]);
+
+  useEffect(() => {
+    // Live Redux Auto-Tracking Hook
+    // Listens to OVE's internal Redux store to instantly catch Pastes, Deletes, and Edits!
+    if (typeof window === 'undefined' || !(window as any).store) return;
+
+    let baselineSequence = parsedSequence?.sequence || '';
+    
+    // Slight debounce timer to prevent Rapid-fire keystroke node bloat
+    let debounceTimer: NodeJS.Timeout;
+
+    const unsubscribe = (window as any).store.subscribe(() => {
+      const state = (window as any).store.getState();
+      const editorState = state?.VectorEditor?.VectorMapProto;
+      if (!editorState) return;
+
+      // OVE uses sequenceDataHistory for undo/redo stacks
+      const currentSeqData = editorState.sequenceDataHistory?.present || editorState.sequenceData;
+      if (!currentSeqData || !currentSeqData.sequence) return;
+
+      const latestSequence = currentSeqData.sequence;
+      
+      // If the actual DNA string mutated (e.g. pasted a fragment, deleted bases)
+      if (latestSequence !== baselineSequence && baselineSequence !== '') {
+        const diffSize = latestSequence.length - baselineSequence.length;
+        
+        // Define Action Label
+        let actionLabel = 'Sequence Edited';
+        if (diffSize > 0) actionLabel = `Fragment Inserted (+${diffSize} bp)`;
+        else if (diffSize < 0) actionLabel = `Fragment Deleted (${diffSize} bp)`;
+
+        // Only track meaningful DNA changes, not just metadata/feature coloring!
+        baselineSequence = latestSequence; // Update instantly to prevent dupe triggers
+
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => {
+          if (onSequenceSave) {
+            onSequenceSave({...currentSeqData, _action: actionLabel});
+          }
+        }, 300); // 300ms debounce
+      } else if (baselineSequence === '' && latestSequence) {
+        // First load initialization
+        baselineSequence = latestSequence;
+      }
+    });
+
+    return () => {
+      unsubscribe();
+      clearTimeout(debounceTimer);
+    };
+  }, [parsedSequence, onSequenceSave]);
 
   return (
     <div className="w-full h-full relative bg-white overflow-hidden flex flex-col">

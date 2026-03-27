@@ -35,11 +35,10 @@ export default function VectorMapDashboard() {
     // Generate a discrete history operation payload
     const op = {
       id: Date.now().toString(),
-      label: 'Sequence Edited',
+      label: newSeqData._action || 'Sequence Edited',
       size: newSeqData.sequence.length
     };
     setHistoryOperations(prev => [...prev, op]);
-    alert(`Vector Saved & History Tracked! (${op.size} bp)`);
   };
 
   useEffect(() => {
