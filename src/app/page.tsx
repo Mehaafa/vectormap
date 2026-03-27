@@ -82,42 +82,30 @@ export default function VectorMapDashboard() {
         // Attempt to save to Supabase
         if (dbStatus === 'connected') {
           try {
-            // Determine Project ID (Create a default one if necessary)
-            let projectId = null;
-            const { data: projects } = await supabase.from('projects').select('id').limit(1);
-            if (projects && projects.length > 0) {
-              projectId = projects[0].id;
+            // Insert Sequence Directly (Bypass Project Table constraints)
+            const { error: insertError } = await supabase.from('sequences').insert({
+              user_id: session?.user?.id,
+              name: result.parsedSequence.name || file.name,
+              type: 'DNA',
+              size_bp: result.parsedSequence.size,
+              is_circular: result.parsedSequence.circular,
+              sequence_data: result.parsedSequence
+            });
+            
+            if (insertError) {
+              console.error('Error saving to Supabase:', insertError);
+              alert('데이터베이스 저장 실패: ' + insertError.message);
             } else {
-              const { data: newProject } = await supabase.from('projects').insert({
-                user_id: session?.user?.id,
-                name: 'My Workspace'
-              }).select('id');
-              if (newProject && newProject.length > 0) projectId = newProject[0].id;
+              console.log('Successfully saved to Supabase Sequences table!');
+              // Auto-refresh the sidebar with the newly parsed vector
+              const { data } = await supabase.from('sequences')
+                .select('id, name, size_bp, created_at, sequence_data')
+                .order('created_at', { ascending: false });
+              if (data) setSavedFiles(data);
             }
-
-            if (projectId) {
-              const { error: insertError } = await supabase.from('sequences').insert({
-                project_id: projectId,
-                user_id: session?.user?.id,
-                name: result.parsedSequence.name || file.name,
-                type: 'DNA',
-                size_bp: result.parsedSequence.size,
-                is_circular: result.parsedSequence.circular,
-                sequence_data: result.parsedSequence
-              });
-              
-              if (insertError) {
-                console.error('Error saving to Supabase:', insertError);
-              } else {
-                console.log('Successfully saved to Supabase Sequences table!');
-                // Auto-refresh the sidebar with the newly parsed vector
-                const { data } = await supabase.from('sequences')
-                  .select('id, name, size_bp, created_at, sequence_data')
-                  .order('created_at', { ascending: false });
-                if (data) setSavedFiles(data);
-              }
-            }
-          } catch (dbErr) {
+          } catch (dbErr: any) {
+            console.error('Catastrophic DB Error:', dbErr);
+            alert('DB 에러: ' + dbErr.message);
             console.error('Supabase error:', dbErr);
           }
         }
