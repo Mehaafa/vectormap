@@ -2,7 +2,6 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
-import html2canvas from 'html2canvas';
 
 export default function OveEditor({ parsedSequence, onSequenceSave }: { parsedSequence?: any, onSequenceSave?: (seq: any) => void }) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -124,25 +123,48 @@ export default function OveEditor({ parsedSequence, onSequenceSave }: { parsedSe
 
             clearTimeout(debounceTimer);
             debounceTimer = setTimeout(async () => {
-              // 🔬 Capture a live screenshot of the circular plasmid map
+              // 🔬 Capture OVE circular plasmid map via native SVG serialization
               let snapshotDataUrl: string | undefined;
               try {
-                // OVE renders its circular map inside a VectorMap SVG element
-                const oveSvg = document.querySelector('.veCircularView') as HTMLElement
-                         || document.querySelector('.veVectorViewer') as HTMLElement
-                         || containerRef.current as HTMLElement;
-                if (oveSvg) {
-                  const canvas = await html2canvas(oveSvg, {
-                    scale: 0.5,         // Keep the thumbnail compact
-                    backgroundColor: '#ffffff',
-                    useCORS: true,
-                    logging: false
+                // OVE renders a top-level <svg> inside .veCircularView
+                const svgEl = document.querySelector('.veCircularView svg')
+                          || document.querySelector('.veVectorViewer svg');
+                
+                if (svgEl) {
+                  // Clone and fix dimensions so the SVG renders standalone
+                  const clone = svgEl.cloneNode(true) as SVGElement;
+                  const bbox = (svgEl as SVGGraphicsElement).getBBox?.();
+                  const w = svgEl.clientWidth || 400;
+                  const h = svgEl.clientHeight || 400;
+                  clone.setAttribute('width', String(w));
+                  clone.setAttribute('height', String(h));
+                  clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+                  
+                  const svgString = new XMLSerializer().serializeToString(clone);
+                  const svgBlob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
+                  const url = URL.createObjectURL(svgBlob);
+                  
+                  // Draw onto a canvas for PNG output
+                  await new Promise<void>((resolve) => {
+                    const img = new Image();
+                    img.onload = () => {
+                      const canvas = document.createElement('canvas');
+                      canvas.width = w;
+                      canvas.height = h;
+                      const ctx = canvas.getContext('2d')!;
+                      ctx.fillStyle = '#ffffff';
+                      ctx.fillRect(0, 0, w, h);
+                      ctx.drawImage(img, 0, 0, w, h);
+                      snapshotDataUrl = canvas.toDataURL('image/png');
+                      URL.revokeObjectURL(url);
+                      resolve();
+                    };
+                    img.onerror = () => { URL.revokeObjectURL(url); resolve(); };
+                    img.src = url;
                   });
-                  snapshotDataUrl = canvas.toDataURL('image/png');
                 }
               } catch (snapErr) {
-                // Non-fatal: If screenshot fails, history node still works with icon fallback
-                console.warn('Plasmid snapshot failed:', snapErr);
+                console.warn('SVG snapshot failed:', snapErr);
               }
 
               if (onSequenceSave) {
