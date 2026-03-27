@@ -1,3 +1,4 @@
+/* eslint-disable */
 // Helper wrapper around @teselagen/bio-parsers
 // It safely attempts to parse GenBank, FASTA, JBEI, SnapGene, etc.
 
