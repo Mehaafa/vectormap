@@ -1,12 +1,30 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import CanvasMap from '@/components/CanvasMap';
 import SequenceEditor from '@/components/SequenceEditor';
-import { Activity, Beaker, FileText, Database, Settings, Layout, Download, Share2 } from 'lucide-react';
+import { Activity, Beaker, FileText, Database, Settings, Layout, Download, Share2, ServerCrash, CheckCircle2 } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
 
 export default function VectorMapDashboard() {
   const [sequence, setSequence] = useState<string>('ATGCGTACGTAGCTAGCTAGCATCGATCGATCGATCGAATGCGTACGTAGCTAGCTAGCATCGATCGATCGATCGAATGCGTACGTAGCTAGCTAGCATCGATCGATCGATCGA');
+  const [dbStatus, setDbStatus] = useState<'checking' | 'connected' | 'error'>('checking');
+
+  useEffect(() => {
+    // Ping Supabase to check connection (Using auth as it doesn't require specific tables)
+    const checkDbConnection = async () => {
+      try {
+        const { error } = await supabase.auth.getSession();
+        if (error) throw error;
+        setDbStatus('connected');
+      } catch (err) {
+        console.error('Supabase connection error:', err);
+        setDbStatus('error');
+      }
+    };
+    
+    checkDbConnection();
+  }, []);
 
   return (
     <div className="flex h-screen w-full bg-black text-white font-sans overflow-hidden">
@@ -27,7 +45,15 @@ export default function VectorMapDashboard() {
           <NavItem icon={<Database size={18} />} label="Features DB" />
         </nav>
         
-        <div className="p-4 border-t border-gray-800">
+        <div className="p-4 border-t border-gray-800 space-y-4">
+          <div className="flex items-center space-x-2 px-3 py-2 rounded-lg bg-gray-900 border border-gray-800">
+            {dbStatus === 'checking' && <span className="flex h-3 w-3 rounded-full bg-yellow-500 animate-pulse" />}
+            {dbStatus === 'connected' && <CheckCircle2 size={16} className="text-emerald-500" />}
+            {dbStatus === 'error' && <ServerCrash size={16} className="text-red-500" />}
+            <span className={`text-sm font-medium ${dbStatus === 'connected' ? 'text-emerald-400' : dbStatus === 'error' ? 'text-red-400' : 'text-yellow-400'}`}>
+              {dbStatus === 'checking' ? 'Connecting DB...' : dbStatus === 'connected' ? 'DB Connected' : 'DB Error'}
+            </span>
+          </div>
           <NavItem icon={<Settings size={18} />} label="Settings" />
         </div>
       </aside>
