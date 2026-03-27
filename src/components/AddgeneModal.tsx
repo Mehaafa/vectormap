@@ -24,13 +24,31 @@ const generateDummyPlasmids = () => {
       size_bp: size,
       is_circular: true,
       sequence: 'atgcggtctata'.repeat(Math.ceil(size / 12)).substring(0, size), 
-      features: []
+      features: [
+        { id: `f_${i}_1`, name: 'CMV Promoter', start: 100, end: 600, type: 'promoter', strand: 1, forward: true },
+        { id: `f_${i}_2`, name: prefix + ' Target Gene', start: 800, end: 1800, type: 'CDS', strand: 1, forward: true },
+        { id: `f_${i}_3`, name: 'PolyA Signal', start: 1850, end: 1950, type: 'polyA_signal', strand: 1, forward: true },
+        { id: `f_${i}_4`, name: 'AmpR', start: Math.floor(size - 1000), end: Math.floor(size - 200), type: 'CDS', strand: -1, forward: false }
+      ]
     });
   }
   // Guarantee the classic ones exist at the top
-  list[0] = { id: 'ad_2686', name: 'pUC19', description: 'High copy cloning vector used universally', size_bp: 2686, is_circular: true, sequence: 'tcgcgcgtttcggtgatgacggtg'.repeat(200).substring(0, 2686), features: [] };
-  list[1] = { id: 'ad_4361', name: 'pBR322', description: 'Classic E. coli cloning vector with dual selection', size_bp: 4361, is_circular: true, sequence: 'ttctcatgtttgacagcttatca'.repeat(300).substring(0, 4361), features: [] };
-  list[2] = { id: 'ad_4969', name: 'pGEX-4T-1', description: 'GST fusion expression vector for E. coli', size_bp: 4969, is_circular: true, sequence: 'acgttatcgactgcacggtgcac'.repeat(400).substring(0, 4969), features: [] };
+  list[0] = { id: 'ad_2686', name: 'pUC19', description: 'High copy cloning vector used universally', size_bp: 2686, is_circular: true, sequence: 'tcgcgcgtttcggtgatgacggtg'.repeat(200).substring(0, 2686), features: [
+    { id: 'f1', name: 'AmpR', start: 150, end: 1010, type: 'CDS', strand: -1, forward: false },
+    { id: 'f2', name: 'ori', start: 1200, end: 1800, type: 'rep_origin', strand: 1, forward: true },
+    { id: 'f3', name: 'lacZ alpha', start: 200, end: 400, type: 'CDS', strand: 1, forward: true }
+  ]};
+  list[1] = { id: 'ad_4361', name: 'pBR322', description: 'Classic E. coli cloning vector with dual selection', size_bp: 4361, is_circular: true, sequence: 'ttctcatgtttgacagcttatca'.repeat(300).substring(0, 4361), features: [
+    { id: 'f4', name: 'AmpR', start: 3000, end: 3860, type: 'CDS', strand: -1, forward: false },
+    { id: 'f5', name: 'TetR', start: 86, end: 1276, type: 'CDS', strand: 1, forward: true },
+    { id: 'f6', name: 'ori', start: 2000, end: 2600, type: 'rep_origin', strand: 1, forward: true }
+  ]};
+  list[2] = { id: 'ad_4969', name: 'pGEX-4T-1', description: 'GST fusion expression vector for E. coli', size_bp: 4969, is_circular: true, sequence: 'acgttatcgactgcacggtgcac'.repeat(400).substring(0, 4969), features: [
+    { id: 'f7', name: 'tac promoter', start: 200, end: 270, type: 'promoter', strand: 1, forward: true },
+    { id: 'f8', name: 'GST tag', start: 280, end: 940, type: 'CDS', strand: 1, forward: true },
+    { id: 'f9', name: 'MCS', start: 945, end: 990, type: 'misc_feature', strand: 1, forward: true },
+    { id: 'f10', name: 'AmpR', start: 3500, end: 4360, type: 'CDS', strand: -1, forward: false }
+  ]};
   return list;
 };
 
