@@ -16,20 +16,21 @@ const generateDummyPlasmids = () => {
   for (let i = 0; i < 300; i++) {
     const prefix = PLASMID_PREFIXES[Math.floor(Math.random() * PLASMID_PREFIXES.length)];
     const suffix = PLASMID_SUFFIXES[Math.floor(Math.random() * PLASMID_SUFFIXES.length)];
+    const size = Math.floor(Math.random() * 8000) + 2000;
     list.push({
       id: `addgene_100${i}`,
       name: `${prefix}${suffix}`,
       description: `Target expression vector derived from ${prefix} backbone`,
-      size_bp: Math.floor(Math.random() * 8000) + 2000,
+      size_bp: size,
       is_circular: true,
-      sequence: 'atgcggtctata'.repeat(15), 
+      sequence: 'atgcggtctata'.repeat(Math.ceil(size / 12)).substring(0, size), 
       features: []
     });
   }
   // Guarantee the classic ones exist at the top
-  list[0] = { id: 'ad_2686', name: 'pUC19', description: 'High copy cloning vector used universally', size_bp: 2686, is_circular: true, sequence: 'tcgcgcgtttcggtgatgacggtg', features: [] };
-  list[1] = { id: 'ad_4361', name: 'pBR322', description: 'Classic E. coli cloning vector with dual selection', size_bp: 4361, is_circular: true, sequence: 'ttctcatgtttgacagcttatca', features: [] };
-  list[2] = { id: 'ad_4969', name: 'pGEX-4T-1', description: 'GST fusion expression vector for E. coli', size_bp: 4969, is_circular: true, sequence: 'acgttatcgactgcacggtgcac', features: [] };
+  list[0] = { id: 'ad_2686', name: 'pUC19', description: 'High copy cloning vector used universally', size_bp: 2686, is_circular: true, sequence: 'tcgcgcgtttcggtgatgacggtg'.repeat(200).substring(0, 2686), features: [] };
+  list[1] = { id: 'ad_4361', name: 'pBR322', description: 'Classic E. coli cloning vector with dual selection', size_bp: 4361, is_circular: true, sequence: 'ttctcatgtttgacagcttatca'.repeat(300).substring(0, 4361), features: [] };
+  list[2] = { id: 'ad_4969', name: 'pGEX-4T-1', description: 'GST fusion expression vector for E. coli', size_bp: 4969, is_circular: true, sequence: 'acgttatcgactgcacggtgcac'.repeat(400).substring(0, 4969), features: [] };
   return list;
 };
 
