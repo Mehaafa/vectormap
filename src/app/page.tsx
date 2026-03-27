@@ -1,11 +1,13 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import CanvasMap from '@/components/CanvasMap';
-import SequenceEditor from '@/components/SequenceEditor';
+import dynamic from 'next/dynamic';
 import { Activity, Beaker, FileText, Database, Settings, Layout, Download, Share2, ServerCrash, CheckCircle2, Upload } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { parseSequenceFile, ParsedSequenceResult } from '@/lib/parsers';
+
+// Dynamically import OVE to skip Server Side Rendering (SSR) since it relies on browser globals
+const OveEditor = dynamic(() => import('@/components/OveEditor'), { ssr: false });
 
 export default function VectorMapDashboard() {
   const [sequence, setSequence] = useState<string>('ATGCGTACGTAGCTAGCTAGCATCGATCGATCGATCGAATGCGTACGTAGCTAGCTAGCATCGATCGATCGATCGAATGCGTACGTAGCTAGCTAGCATCGATCGATCGATCGA');
@@ -145,28 +147,10 @@ export default function VectorMapDashboard() {
         <div className="flex-1 overflow-hidden flex flex-col">
           {currentView === 'Dashboard' ? (
             <div className="flex-1 p-6 grid grid-cols-12 gap-6 overflow-hidden">
-              {/* Left Column (Canvas) */}
-              <div className="col-span-12 lg:col-span-7 flex flex-col space-y-4">
-                <div className="flex-1 rounded-2xl border border-gray-800 bg-gray-900/30 overflow-hidden relative shadow-2xl">
-                  <CanvasMap sequence={sequence} parsedSequence={parsedData?.parsedSequence} />
-                </div>
-              </div>
-
-              {/* Right Column (Sequence & Tools) */}
-              <div className="col-span-12 lg:col-span-5 flex flex-col space-y-6">
-                <div className="flex-1 flex flex-col max-h-[50%]">
-                  <SequenceEditor sequence={sequence} onChange={setSequence} />
-                </div>
-                
-                {/* Quick Properties Card */}
-                <div className="flex-1 bg-gray-900 rounded-xl border border-gray-800 p-5 shadow-inner">
-                  <h3 className="text-xs font-semibold tracking-wider text-gray-400 uppercase mb-4">Properties & Stats</h3>
-                  <div className="grid grid-cols-2 gap-4">
-                    <StatCard label="Length (bp)" value={sequence.length} />
-                    <StatCard label="GC Content" value={`${((sequence.match(/[GC]/g)?.length || 0) / sequence.length * 100).toFixed(1)}%`} />
-                    <StatCard label="Topology" value="Circular" />
-                    <StatCard label="Features" value="5 annotated" />
-                  </div>
+              {/* Center Area: Full width OVE Editor */}
+              <div className="col-span-12 flex-col space-y-4">
+                <div className="w-full h-[800px] bg-white rounded-xl shadow-2xl border border-gray-800 relative z-0">
+                  <OveEditor parsedSequence={parsedData?.parsedSequence} />
                 </div>
               </div>
             </div>
