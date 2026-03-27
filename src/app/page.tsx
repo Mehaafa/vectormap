@@ -5,6 +5,7 @@ import dynamic from 'next/dynamic';
 import { Activity, Beaker, FileText, Database, Settings, Layout, Download, Share2, ServerCrash, CheckCircle2, Upload, Sun, Moon } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { parseSequenceFile, ParsedSequenceResult } from '@/lib/parsers';
+import AuthModal from '@/components/AuthModal';
 
 // Dynamically import OVE to skip Server Side Rendering (SSR) since it relies on browser globals
 const OveEditor = dynamic(() => import('@/components/OveEditor'), { ssr: false });
@@ -14,15 +15,18 @@ export default function VectorMapDashboard() {
   const [parsedData, setParsedData] = useState<ParsedSequenceResult | null>(null);
   const [dbStatus, setDbStatus] = useState<'checking' | 'connected' | 'error'>('checking');
   const [currentView, setCurrentView] = useState<string>('Dashboard');
-  const [theme, setTheme] = useState<'light' | 'dark'>('dark');
+  const [theme, setTheme] = useState<'light' | 'dark'>('light'); // Set Light Mode as default
+  const [session, setSession] = useState<any>(null);
+  const [savedFiles, setSavedFiles] = useState<any[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     // Ping Supabase to check connection (Using auth as it doesn't require specific tables)
     const checkDbConnection = async () => {
       try {
-        const { error } = await supabase.auth.getSession();
+        const { data: { session }, error } = await supabase.auth.getSession();
         if (error) throw error;
+        setSession(session);
         setDbStatus('connected');
       } catch (err) {
         console.error('Supabase connection error:', err);
@@ -31,7 +35,36 @@ export default function VectorMapDashboard() {
     };
     
     checkDbConnection();
+
+    // Listen for Auth changes (login/logout)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
+
+  // Fetch User's Cloud Files when they navigate to "Projects"
+  useEffect(() => {
+    if (session && currentView === 'Projects') {
+      const fetchFiles = async () => {
+        const { data, error } = await supabase.from('sequences')
+          .select('id, name, size_bp, created_at, sequence_data')
+          .order('created_at', { ascending: false });
+        
+        if (data && !error) {
+          setSavedFiles(data);
+        }
+      };
+      fetchFiles();
+    }
+  }, [session, currentView]);
+
+  const handleLoadFile = (fileData: any) => {
+    setSequence(fileData.sequence_data.sequence || '');
+    setParsedData({ success: true, messages: [], parsedSequence: fileData.sequence_data });
+    setCurrentView('Dashboard');
+  };
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -54,6 +87,7 @@ export default function VectorMapDashboard() {
             if (projects && projects.length > 0) {
               const { error: insertError } = await supabase.from('sequences').insert({
                 project_id: projects[0].id,
+                user_id: session?.user?.id,
                 name: result.parsedSequence.name || file.name,
                 type: 'DNA',
                 size_bp: result.parsedSequence.size,
@@ -81,6 +115,14 @@ export default function VectorMapDashboard() {
       alert("Error reading file.");
     }
   };
+
+  if (!session) {
+    return (
+      <div className={`flex h-screen w-full font-sans overflow-hidden transition-colors duration-300 ${theme === 'dark' ? 'bg-black' : 'bg-gray-50'}`}>
+        <AuthModal />
+      </div>
+    );
+  }
 
   return (
     <div className={`flex h-screen w-full font-sans overflow-hidden transition-colors duration-300 ${theme === 'dark' ? 'bg-black text-white' : 'bg-gray-50 text-gray-900'}`}>
@@ -111,6 +153,12 @@ export default function VectorMapDashboard() {
             </span>
           </div>
           <NavItem icon={<Settings size={18} />} label="Settings" theme={theme} active={currentView === 'Settings'} onClick={() => setCurrentView('Settings')} />
+          <button 
+            onClick={() => supabase.auth.signOut()}
+            className={`w-full flex items-center justify-center space-x-2 px-3 py-2 mt-2 rounded-lg text-sm text-red-500 transition-colors ${theme === 'dark' ? 'hover:bg-red-500/10' : 'hover:bg-red-50'}`}
+          >
+            Log Out
+          </button>
         </div>
       </aside>
 
@@ -161,6 +209,29 @@ export default function VectorMapDashboard() {
                   <OveEditor parsedSequence={parsedData?.parsedSequence} />
                 </div>
               </div>
+            </div>
+          ) : currentView === 'Projects' ? (
+            <div className="flex-1 overflow-auto p-8">
+              <h2 className={`text-2xl font-bold mb-6 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>My Cloud Vectors</h2>
+              {savedFiles.length === 0 ? (
+                <div className="text-gray-500 text-center mt-12">No files saved yet. Import a file from the Dashboard to save it to your cloud.</div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                  {savedFiles.map((f) => (
+                    <div key={f.id} onClick={() => handleLoadFile(f)} className={`p-5 rounded-xl border cursor-pointer hover:-translate-y-1 transition-all duration-200 shadow-sm ${theme === 'dark' ? 'bg-gray-900 border-gray-800 hover:border-indigo-500' : 'bg-white border-gray-200 hover:border-indigo-400 hover:shadow-md'}`}>
+                      <div className="flex justify-between items-start mb-3">
+                        <FileText className={`w-6 h-6 ${theme === 'dark' ? 'text-indigo-400' : 'text-indigo-600'}`} />
+                        <span className="text-xs font-mono text-gray-500">{new Date(f.created_at).toLocaleDateString()}</span>
+                      </div>
+                      <h3 className={`font-semibold text-lg mb-1 truncate ${theme === 'dark' ? 'text-gray-200' : 'text-gray-800'}`}>{f.name}</h3>
+                      <p className="text-sm text-gray-500 mb-4">{f.size_bp.toLocaleString()} bp</p>
+                      <button className={`w-full py-2 rounded-lg text-sm font-medium ${theme === 'dark' ? 'bg-gray-800 text-gray-300 hover:bg-indigo-600 hover:text-white' : 'bg-gray-100 text-gray-700 hover:bg-indigo-50 hover:text-indigo-600'}`}>
+                        Load into Editor 🚀
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           ) : (
             <div className="flex-1 flex flex-col items-center justify-center text-center p-8">
