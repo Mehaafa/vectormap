@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import dynamic from 'next/dynamic';
-import { Activity, Beaker, FileText, Database, Settings, Layout, Download, Share2, ServerCrash, CheckCircle2, Upload, Sun, Moon, X, Globe } from 'lucide-react';
+import { Upload, File, Trash2, LogOut, Sun, Moon, Search, Sliders, Layout, Globe, Activity, Database, ChevronDown, ChevronRight, Beaker, FileText, X, Download } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { parseSequenceFile, ParsedSequenceResult } from '@/lib/parsers';
 import AuthModal from '@/components/AuthModal';
@@ -23,6 +23,7 @@ export default function VectorMapDashboard() {
   const [isAddgeneModalOpen, setIsAddgeneModalOpen] = useState(false);
   const [isNCBIModalOpen, setIsNCBIModalOpen] = useState(false);
   const [isExternalMenuOpen, setIsExternalMenuOpen] = useState(false);
+  const [isVectorsExpanded, setIsVectorsExpanded] = useState(true);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -248,47 +249,73 @@ export default function VectorMapDashboard() {
         </div>
         
         <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
-          <NavItem icon={<Layout size={18} />} label="Dashboard" theme={theme} active={currentView === 'Dashboard'} onClick={() => setCurrentView('Dashboard')} />
+          <button 
+            onClick={() => {
+              setCurrentView('Dashboard');
+              setIsVectorsExpanded(prev => !prev);
+            }}
+            className={`w-full flex items-center justify-between px-4 py-2.5 rounded-xl transition-all ${
+              currentView === 'Dashboard' 
+                ? (theme === 'dark' ? 'bg-indigo-500/10 text-indigo-400' : 'bg-indigo-50 text-indigo-700') 
+                : (theme === 'dark' ? 'text-gray-400 hover:bg-gray-800/50 hover:text-gray-200' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900')
+            }`}
+          >
+            <div className="flex items-center">
+              <Layout size={18} className="mr-3" />
+              <span className="font-medium text-[13px]">My Vectors</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              {savedFiles.length > 0 && (
+                <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${
+                  currentView === 'Dashboard' 
+                    ? (theme === 'dark' ? 'bg-indigo-500/20 text-indigo-300' : 'bg-indigo-100 text-indigo-600') 
+                    : (theme === 'dark' ? 'bg-gray-800 text-gray-400' : 'bg-gray-200 text-gray-500')
+                }`}>
+                  {savedFiles.length}
+                </span>
+              )}
+              {isVectorsExpanded ? <ChevronDown size={14} className="opacity-50" /> : <ChevronRight size={14} className="opacity-50" />}
+            </div>
+          </button>
           
           {/* Sub-menu for User Vectors */}
           {currentView === 'Dashboard' && (
-            <div className={`pl-4 py-2 space-y-1 border-l-2 ml-4 mb-2 ${theme === 'dark' ? 'border-gray-800' : 'border-gray-200'}`}>
-              <div className={`text-[10px] font-bold tracking-wider uppercase mb-2 flex items-center justify-between ${theme === 'dark' ? 'text-gray-500' : 'text-gray-400'}`}>
-                <span>My Vectors</span>
-                <span className={`px-1.5 py-0.5 rounded-full text-[9px] ${theme === 'dark' ? 'bg-gray-800 text-gray-300' : 'bg-gray-200 text-gray-600'}`}>{savedFiles.length}</span>
-              </div>
-              
-              {savedFiles.length === 0 ? (
-                <div className={`text-[11px] p-2 mt-1 rounded border border-dashed text-center ${theme === 'dark' ? 'text-gray-500 border-gray-800' : 'text-gray-400 border-gray-300'}`}>
-                  아직 등록된 벡터가 없습니다.<br/>우측 상단 <b>Import File</b> 버튼으로<br/>파일을 추가해 보세요.
-                </div>
-              ) : (
-                savedFiles.map(file => {
-                  const isSelected = parsedData?.parsedSequence?.name === file.name;
-                  return (
-                    <div key={file.id} className="group relative w-full flex items-center">
-                      <button 
-                        onClick={() => handleLoadFile(file)}
-                        className={`w-full flex items-center text-left px-3 py-1.5 text-xs rounded-md truncate transition-all pr-8 ${
-                          isSelected 
-                            ? (theme === 'dark' ? 'bg-indigo-500/20 text-indigo-300 font-medium' : 'bg-indigo-50 border-indigo-200 text-indigo-700 font-medium')
-                            : (theme === 'dark' ? 'text-gray-400 hover:bg-gray-800 hover:text-gray-200' : 'text-gray-600 hover:bg-gray-100 uppercase')
-                        }`}
-                      >
-                        <span className="mr-2 opacity-70">🧬</span>
-                        <span className="truncate">{file.name}</span>
-                      </button>
-                      <button
-                        onClick={(e) => handleDeleteFile(e, file.id)}
-                        className={`absolute right-1 p-1 rounded opacity-0 group-hover:opacity-100 transition-opacity ${theme === 'dark' ? 'text-gray-500 hover:text-red-400 hover:bg-gray-700' : 'text-gray-400 hover:text-red-500 hover:bg-gray-200'}`}
-                        title="Delete Vector"
-                      >
-                        <X size={14} />
-                      </button>
+            <div className={`grid transition-all duration-300 ease-in-out ${isVectorsExpanded ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
+              <div className="overflow-hidden">
+                <div className={`pl-4 py-2 space-y-1 ml-4 mb-2 mt-1 ${theme === 'dark' ? 'border-gray-800' : 'border-gray-200'}`}>
+                  {savedFiles.length === 0 ? (
+                    <div className={`text-[11px] p-2 mt-1 rounded border border-dashed text-center ${theme === 'dark' ? 'text-gray-500 border-gray-800' : 'text-gray-400 border-gray-300'}`}>
+                      아직 등록된 벡터가 없습니다.<br/>우측 상단 <b>Import File</b> 버튼으로<br/>파일을 추가해 보세요.
                     </div>
-                  );
-                })
-              )}
+                  ) : (
+                    savedFiles.map(file => {
+                      const isSelected = parsedData?.parsedSequence?.name === file.name;
+                      return (
+                        <div key={file.id} className="group relative w-full flex items-center">
+                          <button 
+                            onClick={() => handleLoadFile(file)}
+                            className={`w-full flex items-center text-left px-3 py-1.5 text-xs rounded-md truncate transition-all pr-8 ${
+                              isSelected 
+                                ? (theme === 'dark' ? 'bg-indigo-500/20 text-indigo-300 font-medium' : 'bg-indigo-50 border-indigo-200 text-indigo-700 font-medium')
+                                : (theme === 'dark' ? 'text-gray-400 hover:bg-gray-800 hover:text-gray-200' : 'text-gray-600 hover:bg-gray-100 uppercase')
+                            }`}
+                          >
+                            <span className="mr-2 opacity-70">🧬</span>
+                            <span className="truncate">{file.name}</span>
+                          </button>
+                          <button
+                            onClick={(e) => handleDeleteFile(e, file.id)}
+                            className={`absolute right-1 p-1 rounded opacity-0 group-hover:opacity-100 transition-opacity ${theme === 'dark' ? 'text-gray-500 hover:text-red-400 hover:bg-gray-700' : 'text-gray-400 hover:text-red-500 hover:bg-gray-200'}`}
+                            title="Delete Vector"
+                          >
+                            <X size={14} />
+                          </button>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
             </div>
           )}
 
