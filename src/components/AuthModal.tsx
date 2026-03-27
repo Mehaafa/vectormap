@@ -24,6 +24,7 @@ export default function AuthModal() {
         // If email confirmation is disabled in Supabase, a session is established immediately.
         // The modal will unmount automatically via page.tsx's onAuthStateChange.
         if (!data.session) {
+          alert('가입은 성공했으나, 현재 Supabase 설정상 "이메일 인증(Confirm email)"이 아직 켜져 있어서 로그인이 대기 중입니다! \n\nSupabase 대시보드 [Authentication -> Providers -> Email]에서 Confirm email을 꼭 꺼주세요!');
           setIsLogin(true); // Switch to login screen just in case
         }
       }
