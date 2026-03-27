@@ -59,11 +59,13 @@ export default function OveEditor({ parsedSequence }: { parsedSequence?: any }) 
       // Pass the parsed sequence data if it exists
       if (parsedSequence) {
         vectorEditor.updateEditor({
-          sequenceData: parsedSequence
+          sequenceData: parsedSequence,
+          readOnly: false
         });
       } else {
         // Load a mockup template if none
         vectorEditor.updateEditor({
+          readOnly: false,
           sequenceData: {
             name: 'Untitled Vector',
             circular: true,
