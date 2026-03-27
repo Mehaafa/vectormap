@@ -19,9 +19,13 @@ export default function AuthModal() {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
       } else {
-        const { error } = await supabase.auth.signUp({ email, password });
+        const { data, error } = await supabase.auth.signUp({ email, password });
         if (error) throw error;
-        alert('Check your email for the confirmation link! (If email confirmations are enabled in Supabase)');
+        // If email confirmation is disabled in Supabase, a session is established immediately.
+        // The modal will unmount automatically via page.tsx's onAuthStateChange.
+        if (!data.session) {
+          setIsLogin(true); // Switch to login screen just in case
+        }
       }
     } catch (err: any) {
       setError(err.message || 'Authentication error');
