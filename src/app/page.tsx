@@ -44,9 +44,9 @@ export default function VectorMapDashboard() {
     return () => subscription.unsubscribe();
   }, []);
 
-  // Fetch User's Cloud Files when they navigate to "Projects"
+  // Fetch User's Cloud Files on load
   useEffect(() => {
-    if (session && currentView === 'Projects') {
+    if (session) {
       const fetchFiles = async () => {
         const { data, error } = await supabase.from('sequences')
           .select('id, name, size_bp, created_at, sequence_data')
@@ -58,7 +58,7 @@ export default function VectorMapDashboard() {
       };
       fetchFiles();
     }
-  }, [session, currentView]);
+  }, [session]);
 
   const handleLoadFile = (fileData: any) => {
     setSequence(fileData.sequence_data.sequence || '');
@@ -136,9 +136,34 @@ export default function VectorMapDashboard() {
           </h1>
         </div>
         
-        <nav className="flex-1 p-4 space-y-2">
+        <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
           <NavItem icon={<Layout size={18} />} label="Dashboard" theme={theme} active={currentView === 'Dashboard'} onClick={() => setCurrentView('Dashboard')} />
-          <NavItem icon={<FileText size={18} />} label="Projects" theme={theme} active={currentView === 'Projects'} onClick={() => setCurrentView('Projects')} />
+          
+          {/* Sub-menu for User Vectors */}
+          {savedFiles.length > 0 && (
+            <div className={`pl-4 py-2 space-y-1 border-l-2 ml-4 mb-2 ${theme === 'dark' ? 'border-gray-800' : 'border-gray-200'}`}>
+              <div className={`text-[10px] font-bold tracking-wider uppercase mb-2 ${theme === 'dark' ? 'text-gray-500' : 'text-gray-400'}`}>My Cloud Vectors</div>
+              {savedFiles.map(file => {
+                const isSelected = parsedData?.parsedSequence?.name === file.name;
+                return (
+                  <button 
+                    key={file.id}
+                    onClick={() => handleLoadFile(file)}
+                    className={`w-full flex items-center text-left px-3 py-1.5 text-xs rounded-md truncate transition-all ${
+                      isSelected 
+                        ? (theme === 'dark' ? 'bg-indigo-500/20 text-indigo-300 font-medium' : 'bg-indigo-50 border-indigo-200 text-indigo-700 font-medium')
+                        : (theme === 'dark' ? 'text-gray-400 hover:bg-gray-800 hover:text-gray-200' : 'text-gray-600 hover:bg-gray-100 uppercase')
+                    }`}
+                  >
+                    <span className="mr-2 opacity-70">🧬</span>
+                    <span className="truncate">{file.name}</span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          <NavItem icon={<FileText size={18} />} label="Projects Layout" theme={theme} active={currentView === 'Projects'} onClick={() => setCurrentView('Projects')} />
           <NavItem icon={<Activity size={18} />} label="Enzyme Analysis" theme={theme} active={currentView === 'Enzyme Analysis'} onClick={() => setCurrentView('Enzyme Analysis')} />
           <NavItem icon={<Database size={18} />} label="Features DB" theme={theme} active={currentView === 'Features DB'} onClick={() => setCurrentView('Features DB')} />
         </nav>
