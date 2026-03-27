@@ -332,7 +332,7 @@ export default function VectorMapDashboard() {
         />
         
         {/* Header */}
-        <header className={`h-16 flex items-center justify-between px-8 border-b transition-colors duration-300 ${theme === 'dark' ? 'border-gray-800 bg-gray-900/40 backdrop-blur-md' : 'border-gray-200 bg-white/60 backdrop-blur-md'}`}>
+        <header className={`relative z-[100] h-16 flex items-center justify-between px-8 border-b transition-colors duration-300 ${theme === 'dark' ? 'border-gray-800 bg-gray-900/40 backdrop-blur-md' : 'border-gray-200 bg-white/60 backdrop-blur-md'}`}>
           <div className="flex items-center space-x-4">
             <h2 className={`text-sm font-medium ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>Project: <span className={`font-semibold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>{parsedData?.parsedSequence?.name || 'Untitled Vector'}</span></h2>
             {parsedData && <span className={`px-2 py-0.5 rounded text-xs font-medium border ${theme === 'dark' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-emerald-50 text-emerald-600 border-emerald-200'}`}>Saved</span>}
