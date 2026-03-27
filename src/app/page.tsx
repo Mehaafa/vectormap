@@ -1,15 +1,18 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import CanvasMap from '@/components/CanvasMap';
 import SequenceEditor from '@/components/SequenceEditor';
-import { Activity, Beaker, FileText, Database, Settings, Layout, Download, Share2, ServerCrash, CheckCircle2 } from 'lucide-react';
+import { Activity, Beaker, FileText, Database, Settings, Layout, Download, Share2, ServerCrash, CheckCircle2, Upload } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import { parseSequenceFile, ParsedSequenceResult } from '@/lib/parsers';
 
 export default function VectorMapDashboard() {
   const [sequence, setSequence] = useState<string>('ATGCGTACGTAGCTAGCTAGCATCGATCGATCGATCGAATGCGTACGTAGCTAGCTAGCATCGATCGATCGATCGAATGCGTACGTAGCTAGCTAGCATCGATCGATCGATCGA');
+  const [parsedData, setParsedData] = useState<ParsedSequenceResult | null>(null);
   const [dbStatus, setDbStatus] = useState<'checking' | 'connected' | 'error'>('checking');
   const [currentView, setCurrentView] = useState<string>('Dashboard');
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     // Ping Supabase to check connection (Using auth as it doesn't require specific tables)
@@ -26,6 +29,55 @@ export default function VectorMapDashboard() {
     
     checkDbConnection();
   }, []);
+
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const text = await file.text();
+      const result = await parseSequenceFile(text, file.name);
+      
+      if (result.success && result.parsedSequence) {
+        console.log("Parsed vector file successfully:", result.parsedSequence);
+        setSequence(result.parsedSequence.sequence);
+        setParsedData(result);
+        
+        // Attempt to save to Supabase
+        if (dbStatus === 'connected') {
+          try {
+            // Find mock project
+            const { data: projects } = await supabase.from('projects').select('id').eq('name', 'pUC19 Optimization').limit(1);
+            if (projects && projects.length > 0) {
+              const { error: insertError } = await supabase.from('sequences').insert({
+                project_id: projects[0].id,
+                name: result.parsedSequence.name || file.name,
+                type: 'DNA',
+                size_bp: result.parsedSequence.size,
+                is_circular: result.parsedSequence.circular,
+                sequence_data: result.parsedSequence
+              });
+              
+              if (insertError) {
+                console.error('Error saving to Supabase:', insertError);
+              } else {
+                console.log('Successfully saved to Supabase Sequences table!');
+              }
+            }
+          } catch (dbErr) {
+            console.error('Supabase error:', dbErr);
+          }
+        }
+
+        alert(`Successfully imported: ${result.parsedSequence.name} (${result.parsedSequence.size}bp)`);
+      } else {
+        alert("Failed to parse file: " + result.messages.join(", "));
+      }
+    } catch (e) {
+      console.error("Error reading file:", e);
+      alert("Error reading file.");
+    }
+  };
 
   return (
     <div className="flex h-screen w-full bg-black text-white font-sans overflow-hidden">
@@ -64,13 +116,23 @@ export default function VectorMapDashboard() {
         {/* Header */}
         <header className="h-16 flex items-center justify-between px-8 border-b border-gray-800 bg-gray-900/40 backdrop-blur-md">
           <div className="flex items-center space-x-4">
-            <h2 className="text-sm font-medium text-gray-300">Project: <span className="text-white font-semibold">pUC19 Optimization</span></h2>
+            <h2 className="text-sm font-medium text-gray-300">Project: <span className="text-white font-semibold">{parsedData?.parsedSequence?.name || 'pUC19 Optimization'}</span></h2>
             <span className="px-2 py-0.5 rounded text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Saved</span>
           </div>
           <div className="flex items-center space-x-3">
-            <button className="flex items-center space-x-2 px-3 py-1.5 rounded-lg text-sm font-medium text-gray-300 hover:bg-gray-800 hover:text-white transition-colors">
-              <Share2 size={16} />
-              <span>Share</span>
+            <input 
+              type="file" 
+              ref={fileInputRef} 
+              className="hidden" 
+              accept=".gb,.gbk,.fasta,.fas,.dna" 
+              onChange={handleFileUpload} 
+            />
+            <button 
+              onClick={() => fileInputRef.current?.click()}
+              className="flex items-center space-x-2 px-4 py-1.5 rounded-lg text-sm font-medium bg-gray-800 hover:bg-gray-700 text-white transition-all shadow-md"
+            >
+              <Upload size={16} />
+              <span>Import File</span>
             </button>
             <button className="flex items-center space-x-2 px-4 py-1.5 rounded-lg text-sm font-medium bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-500/20 transition-all">
               <Download size={16} />
