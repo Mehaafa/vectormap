@@ -9,6 +9,7 @@ import { supabase } from '@/lib/supabase';
 export default function VectorMapDashboard() {
   const [sequence, setSequence] = useState<string>('ATGCGTACGTAGCTAGCTAGCATCGATCGATCGATCGAATGCGTACGTAGCTAGCTAGCATCGATCGATCGATCGAATGCGTACGTAGCTAGCTAGCATCGATCGATCGATCGA');
   const [dbStatus, setDbStatus] = useState<'checking' | 'connected' | 'error'>('checking');
+  const [currentView, setCurrentView] = useState<string>('Dashboard');
 
   useEffect(() => {
     // Ping Supabase to check connection (Using auth as it doesn't require specific tables)
@@ -39,10 +40,10 @@ export default function VectorMapDashboard() {
         </div>
         
         <nav className="flex-1 p-4 space-y-2">
-          <NavItem icon={<Layout size={18} />} label="Dashboard" active />
-          <NavItem icon={<FileText size={18} />} label="Projects" />
-          <NavItem icon={<Activity size={18} />} label="Enzyme Analysis" />
-          <NavItem icon={<Database size={18} />} label="Features DB" />
+          <NavItem icon={<Layout size={18} />} label="Dashboard" active={currentView === 'Dashboard'} onClick={() => setCurrentView('Dashboard')} />
+          <NavItem icon={<FileText size={18} />} label="Projects" active={currentView === 'Projects'} onClick={() => setCurrentView('Projects')} />
+          <NavItem icon={<Activity size={18} />} label="Enzyme Analysis" active={currentView === 'Enzyme Analysis'} onClick={() => setCurrentView('Enzyme Analysis')} />
+          <NavItem icon={<Database size={18} />} label="Features DB" active={currentView === 'Features DB'} onClick={() => setCurrentView('Features DB')} />
         </nav>
         
         <div className="p-4 border-t border-gray-800 space-y-4">
@@ -54,7 +55,7 @@ export default function VectorMapDashboard() {
               {dbStatus === 'checking' ? 'Connecting DB...' : dbStatus === 'connected' ? 'DB Connected' : 'DB Error'}
             </span>
           </div>
-          <NavItem icon={<Settings size={18} />} label="Settings" />
+          <NavItem icon={<Settings size={18} />} label="Settings" active={currentView === 'Settings'} onClick={() => setCurrentView('Settings')} />
         </div>
       </aside>
 
@@ -79,42 +80,57 @@ export default function VectorMapDashboard() {
         </header>
 
         {/* Workspace Layout */}
-        <div className="flex-1 p-6 grid grid-cols-12 gap-6 overflow-hidden">
-          
-          {/* Left Column (Canvas) */}
-          <div className="col-span-12 lg:col-span-7 flex flex-col space-y-4">
-            <div className="flex-1 rounded-2xl border border-gray-800 bg-gray-900/30 overflow-hidden relative shadow-2xl">
-              <CanvasMap sequence={sequence} />
-            </div>
-          </div>
+        <div className="flex-1 overflow-hidden flex flex-col">
+          {currentView === 'Dashboard' ? (
+            <div className="flex-1 p-6 grid grid-cols-12 gap-6 overflow-hidden">
+              {/* Left Column (Canvas) */}
+              <div className="col-span-12 lg:col-span-7 flex flex-col space-y-4">
+                <div className="flex-1 rounded-2xl border border-gray-800 bg-gray-900/30 overflow-hidden relative shadow-2xl">
+                  <CanvasMap sequence={sequence} />
+                </div>
+              </div>
 
-          {/* Right Column (Sequence & Tools) */}
-          <div className="col-span-12 lg:col-span-5 flex flex-col space-y-6">
-            <div className="flex-1 flex flex-col max-h-[50%]">
-              <SequenceEditor sequence={sequence} onChange={setSequence} />
-            </div>
-            
-            {/* Quick Properties Card */}
-            <div className="flex-1 bg-gray-900 rounded-xl border border-gray-800 p-5 shadow-inner">
-              <h3 className="text-xs font-semibold tracking-wider text-gray-400 uppercase mb-4">Properties & Stats</h3>
-              <div className="grid grid-cols-2 gap-4">
-                <StatCard label="Length (bp)" value={sequence.length} />
-                <StatCard label="GC Content" value={`${((sequence.match(/[GC]/g)?.length || 0) / sequence.length * 100).toFixed(1)}%`} />
-                <StatCard label="Topology" value="Circular" />
-                <StatCard label="Features" value="5 annotated" />
+              {/* Right Column (Sequence & Tools) */}
+              <div className="col-span-12 lg:col-span-5 flex flex-col space-y-6">
+                <div className="flex-1 flex flex-col max-h-[50%]">
+                  <SequenceEditor sequence={sequence} onChange={setSequence} />
+                </div>
+                
+                {/* Quick Properties Card */}
+                <div className="flex-1 bg-gray-900 rounded-xl border border-gray-800 p-5 shadow-inner">
+                  <h3 className="text-xs font-semibold tracking-wider text-gray-400 uppercase mb-4">Properties & Stats</h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <StatCard label="Length (bp)" value={sequence.length} />
+                    <StatCard label="GC Content" value={`${((sequence.match(/[GC]/g)?.length || 0) / sequence.length * 100).toFixed(1)}%`} />
+                    <StatCard label="Topology" value="Circular" />
+                    <StatCard label="Features" value="5 annotated" />
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
-
+          ) : (
+            <div className="flex-1 flex flex-col items-center justify-center text-center p-8">
+              <div className="w-16 h-16 rounded-full bg-indigo-500/10 flex items-center justify-center mb-6">
+                <Activity className="w-8 h-8 text-indigo-400" />
+              </div>
+              <h2 className="text-2xl font-bold text-gray-200 mb-3">{currentView} Module</h2>
+              <p className="text-gray-500 text-lg max-w-md">
+                This section is currently under construction in the prototype phase.
+              </p>
+            </div>
+          )}
         </div>
       </main>
     </div>
   );
 }
 
-function NavItem({ icon, label, active = false }: { icon: React.ReactNode, label: string, active?: boolean }) {
+function NavItem({ icon, label, active = false, onClick }: { icon: React.ReactNode, label: string, active?: boolean, onClick?: () => void }) {
   return (
-    <button className={`w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg transition-colors ${active ? 'bg-indigo-500/10 text-indigo-400 font-medium' : 'text-gray-400 hover:bg-gray-800 hover:text-gray-200'}`}>
+    <button 
+      onClick={onClick}
+      className={`w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg transition-colors ${active ? 'bg-indigo-500/10 text-indigo-400 font-medium' : 'text-gray-400 hover:bg-gray-800 hover:text-gray-200'}`}
+    >
       {icon}
       <span>{label}</span>
     </button>
