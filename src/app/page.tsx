@@ -2,10 +2,11 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import dynamic from 'next/dynamic';
-import { Activity, Beaker, FileText, Database, Settings, Layout, Download, Share2, ServerCrash, CheckCircle2, Upload, Sun, Moon, X } from 'lucide-react';
+import { Activity, Beaker, FileText, Database, Settings, Layout, Download, Share2, ServerCrash, CheckCircle2, Upload, Sun, Moon, X, Globe } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { parseSequenceFile, ParsedSequenceResult } from '@/lib/parsers';
 import AuthModal from '@/components/AuthModal';
+import AddgeneModal from '@/components/AddgeneModal';
 
 // Dynamically import OVE to skip Server Side Rendering (SSR) since it relies on browser globals
 const OveEditor = dynamic(() => import('@/components/OveEditor'), { ssr: false });
@@ -18,6 +19,7 @@ export default function VectorMapDashboard() {
   const [theme, setTheme] = useState<'light' | 'dark'>('light'); // Set Light Mode as default
   const [session, setSession] = useState<any>(null);
   const [savedFiles, setSavedFiles] = useState<any[]>([]);
+  const [isAddgeneModalOpen, setIsAddgeneModalOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -73,6 +75,39 @@ export default function VectorMapDashboard() {
       fetchFiles();
     }
   }, [session]);
+
+  const handleLoadAddgeneVector = async (vectorData: any) => {
+    // Save to local cloud permanently
+    const { error: insertError } = await supabase.from('sequences').insert({
+      user_id: session?.user?.id,
+      name: vectorData.sequence_data.name,
+      type: 'DNA',
+      size_bp: vectorData.sequence_data.size,
+      is_circular: vectorData.sequence_data.circular,
+      sequence_data: vectorData.sequence_data
+    });
+    
+    if (insertError) {
+      alert('Addgene import DB error: ' + insertError.message);
+    } else {
+      // Refresh sidebar list
+      const fetchFiles = async () => {
+        const { data } = await supabase.from('sequences')
+          .select('id, name, size_bp, created_at, sequence_data')
+          .order('created_at', { ascending: false });
+        if (data) setSavedFiles(data);
+      };
+      await fetchFiles();
+      
+      // Load visually
+      setSequence(vectorData.sequence_data.sequence);
+      setParsedData({ success: true, messages: [], parsedSequence: vectorData.sequence_data });
+      setCurrentView('Dashboard');
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('lastViewedVectorId', vectorData.id);
+      }
+    }
+  };
 
   const handleLoadFile = (fileData: any) => {
     setSequence(fileData.sequence_data.sequence || '');
@@ -246,7 +281,14 @@ export default function VectorMapDashboard() {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col h-full overflow-hidden">
+      <main className="flex-1 flex flex-col h-full overflow-hidden relative">
+        <AddgeneModal 
+          isOpen={isAddgeneModalOpen} 
+          onClose={() => setIsAddgeneModalOpen(false)} 
+          onSelectVector={handleLoadAddgeneVector} 
+          theme={theme} 
+        />
+        
         {/* Header */}
         <header className={`h-16 flex items-center justify-between px-8 border-b transition-colors duration-300 ${theme === 'dark' ? 'border-gray-800 bg-gray-900/40 backdrop-blur-md' : 'border-gray-200 bg-white/60 backdrop-blur-md'}`}>
           <div className="flex items-center space-x-4">
@@ -269,11 +311,18 @@ export default function VectorMapDashboard() {
               onChange={handleFileUpload} 
             />
             <button 
-              onClick={() => fileInputRef.current?.click()}
-              className="flex items-center space-x-2 px-4 py-1.5 rounded-lg text-sm font-medium bg-gray-800 hover:bg-gray-700 text-white transition-all shadow-md"
+              onClick={() => setIsAddgeneModalOpen(true)}
+              className={`flex items-center space-x-2 px-4 py-1.5 rounded-lg text-[13px] font-medium transition-all shadow-md ${theme === 'dark' ? 'bg-indigo-500 hover:bg-indigo-400 text-white' : 'bg-indigo-100 hover:bg-indigo-200 text-indigo-700'}`}
             >
-              <Upload size={16} />
-              <span>Import File</span>
+              <Globe size={15} />
+              <span>Import from Addgene</span>
+            </button>
+            <button 
+              onClick={() => fileInputRef.current?.click()}
+              className={`flex items-center space-x-2 px-4 py-1.5 rounded-lg text-[13px] font-medium transition-all shadow-md ${theme === 'dark' ? 'bg-gray-800 hover:bg-gray-700 text-white' : 'bg-gray-800 hover:bg-gray-700 text-white'}`}
+            >
+              <Upload size={15} />
+              <span>Local File</span>
             </button>
             <button className="flex items-center space-x-2 px-4 py-1.5 rounded-lg text-sm font-medium bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-500/20 transition-all">
               <Download size={16} />
