@@ -40,12 +40,22 @@ export default function VectorMapDashboard() {
   const handleSequenceSave = useCallback(async (newSeqData: any) => {
     const actionLabel = newSeqData._action || 'Sequence Edited';
     
+    // Auto-tracked Live Sequence Edit: Push silently to local component state array
+    const op = {
+      id: Date.now().toString(),
+      label: actionLabel === 'Manual Save' ? 'Manual Checkpoint' : actionLabel,
+      size: newSeqData.sequence.length
+    };
+
     if (actionLabel === 'Manual Save') {
+      const newHistory = [...historyOperationsRef.current, op];
+      setHistoryOperations(newHistory); // Visual update
+
       if (activeVectorId) {
         try {
           const { error } = await supabase.from('sequences').update({
             sequence_data: newSeqData,
-            history_nodes: historyOperationsRef.current,
+            history_nodes: newHistory, // Sync the fresh array including this checkpoint
             size_bp: newSeqData.sequence.length
           }).eq('id', activeVectorId);
           
@@ -67,12 +77,7 @@ export default function VectorMapDashboard() {
       return; 
     }
 
-    // Auto-tracked Live Sequence Edit: Push silently to local component state array
-    const op = {
-      id: Date.now().toString(),
-      label: actionLabel,
-      size: newSeqData.sequence.length
-    };
+    // Default flow: Just visual auto-tracking append
     setHistoryOperations(prev => [...prev, op]);
   }, [activeVectorId]);
 
