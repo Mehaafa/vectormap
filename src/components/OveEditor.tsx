@@ -48,6 +48,7 @@ export default function OveEditor({ parsedSequence }: { parsedSequence?: any }) 
         editorName: 'VectorMapProto',
         isFullscreen: false, // Ensure it stays within our custom dashboard frame!
         showMenuBar: true,
+        readOnly: false, // 🔥 Force unlocking the editor to allow pasting/editing
         ToolBarProps: {
           toolList: [
             "undoTool", "redoTool", "cutsiteTool", "featureTool", "oligoTool", "orfTool", "editTool", "findTool", "visibilityTool"
