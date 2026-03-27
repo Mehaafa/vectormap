@@ -46,7 +46,7 @@ export default function OveEditor({ parsedSequence }: { parsedSequence?: any }) 
     if (isLoaded && containerRef.current && (window as any).createVectorEditor) {
       const vectorEditor = (window as any).createVectorEditor(containerRef.current, {
         editorName: 'VectorMapProto',
-        isFullscreen: true,
+        isFullscreen: false, // Ensure it stays within our custom dashboard frame!
         showMenuBar: true,
         ToolBarProps: {
           toolList: [
