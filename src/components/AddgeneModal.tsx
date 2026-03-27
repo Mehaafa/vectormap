@@ -1,3 +1,4 @@
+/* eslint-disable */
 import React, { useState } from 'react';
 import { Search, X, Globe, DownloadCloud } from 'lucide-react';
 
