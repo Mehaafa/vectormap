@@ -8,49 +8,38 @@ interface AddgeneModalProps {
   theme: string;
 }
 
-const DUMMY_ADDGENE_RESULTS = [
-  {
-    id: 'addgene_pUC19',
-    name: 'pUC19',
-    description: 'High copy cloning vector used universally',
-    size_bp: 2686,
-    is_circular: true,
-    sequence: 'tcgcgcgtttcggtgatgacggtgaaaacctctgacacatgcagctcccggagacggtcacagcttgtctgtaagcggatgccgggagcagacaagcccgtcagggcgcgtcagcgggtgttggcgggtgtcggggctggcttaactatgcggcatcagagcagattgtactgagagtgcaccatatgcggtgtgaaataccgcacagatgcgtaaggagaaaataccgcatcaggcgccattcgccattcaggctgcgcaactgttgggaagggcgatcggtgcgggcctcttcgctattacgccagctggcgaaagggggatgtgctgcaaggcgattaagttgggtaacgccagggttttcccagtcacgacgttgtaaaacgacggccagtgccaagcttgcatgcctgcaggtcgactctagaggatccccgggtaccgagctcgaattcactggccgtcgttttacaacgtcgtgactgggaaaaccctggcgttacccaacttaatcgccttgcagcacatccccctttcgccagctggcgtaatagcgaagaggcccgcaccgatcgcccttcccaacagttgcgcagcctgaatggcgaatggcgctgCgatcgtataacgttactggtttcacattcaccaccctgaattgactctcttccgggcgctatcatgccataccgcgaaaggttttgcgccattcgatggtgtc',
-    features: [
-      { id: 'f1', name: 'AmpR', start: 100, end: 500, type: 'CDS', _id: 'fake_1' },
-      { id: 'f2', name: 'ori', start: 550, end: 650, type: 'rep_origin', _id: 'fake_2' }
-    ]
-  },
-  {
-    id: 'addgene_pBR322',
-    name: 'pBR322',
-    description: 'Classic E. coli cloning vector with dual selection',
-    size_bp: 4361,
-    is_circular: true,
-    sequence: 'ttctcatgtttgacagcttatcatcgataagctttaatgcggtagtttatcacagttaaattgctaacgcagtcaggcaccgtgtatgaaatctaacaatgcgctcatcgtcatcctcggcaccgtcaccctggatgctgtaggcataggcttggttatgccggtactgccgggcctcttgcgggatatcgtccattccgacagcatcgccagtcactatggcgtgctgctagcgctatatgcgttgatgcaatttctatgcgcacccgttctcggagcactgtccgaccgctttggccgccgcccagtcctgctcgcttcgctacttggagccactatcgactacgcgatcatggcgaccacacccgtcctgtggatcctctacgccggacgcatcgtggccggcatcaccggcgccacaggtgcggttgctggcgcctatatcgccgacatcaccgatggggaagatcgggctcgccacttcgggctcatgagcgcttgtttcggcgtgggtatggtggcaggccccgtggccgggggactgttgggcgccatctccttgcatgcaccattccttgcggcggcggtgctcaacggcctcaacctactactgggctgcttcctaatgcaggagtcgcataagggagagcgtcgaccgatgcccttgagagccttcaacccagtcagctccttccggtgggcgcggggcatgactatcgtcgccgcacttatgactgtcttctttatcatgcaactcgtaggacaggtgccggcagcgctctgggtcattttcggcgaggaccgctttcgctggagcgcgacgatgatcggcctgtcgcttgcggtattcggaatcttgcacgccctcgctcaagccttcgtcactggtcccgccaccaaacgtttcggcgagaagcaggccattatcgccggcatggcggccgacgcgctgggctacgtcttgctggcgttcgcgacgcgaggctggatggccttccccattatgattcttctcgcttccggcggcatcgggatgcccgcgttgcaggccatgctgtccaggcaggtagatgacgaccatcagggacagcttcaaggatcgctcgcggctcttaccagcctaacttcgatcactggaccgctgatcgtcacggcgatttatgccgcctcggcgagcacatggaacgggttggcatggattgtaggcgccgccctataccttgtctgcctccccgcgttgcgtcgcggtgcatggagccgggccacctcgacctgaatggaagccggcggcacctcgctaacggattcaccactccaagaattggagccaatcaattcttgcggagaactgtgaatgcgcaaaccaacccttggcagaacatatccatcgcgtccgccatctccagcagccgcacgcggcgcatctcgggcagcgttgggtcctggccacgggtgcgcatgatcgtgctcctgtcgttgaggacccggctaggctggcggggttgccttactggttagcagaatgaatcaccgatacgcgagcgaacgtgaagcgactgctgctgcaaaacgtctgcgacctgagcaacaacatgaatggtcttcggtttccgtgtttcgtaaagtctggaaacgcggaagtcccctacgtgctgctgaagttgcccgcaacagagagtggaaccaaccggtgataccacgatactatgactgagagtcaacgccatgagcggcctcatttcttattctgagttacaacagtccgcaccgctgtccggtagctccttccggtgggcgcggggcatgactatcgtcgccgcacttatgactgtcttctttatcatgcaactcgtaggacaggtgccggcagcgctctgggtcattttcggcgaggaccgctttcgctggagcg',
-    features: [
-      { id: 'f3', name: 'AmpR', start: 100, end: 800, type: 'CDS', _id: 'fake_3' },
-      { id: 'f4', name: 'TetR', start: 1000, end: 1500, type: 'CDS', _id: 'fake_4' }
-    ]
-  },
-  {
-    id: 'addgene_pGEX',
-    name: 'pGEX-4T-1',
-    description: 'GST fusion expression vector for E. coli',
-    size_bp: 4969,
-    is_circular: true,
-    sequence: 'acgttatcgactgcacggtgcaccaatgcttctggcgtcaggcagccatcggaagctgtggtatggctgtgcaggtcgtaaatcactgcataattcgtgtcgctcaaggcgcactcccgttctggataatgttttttgcgccgacatcataacggttctggcaaatattctgaaatgagctgttgacaattaatcatcgaactagttaactagtacgcaagttcacgtaaaaagggtatctagaattctgtttccagggtccgaattcatttg',
-    features: [
-      { id: 'f5', name: 'GST tag', start: 10, end: 100, type: 'tag', _id: 'fake_5' },
-      { id: 'f6', name: 'tac promoter', start: 200, end: 250, type: 'promoter', _id: 'fake_6' }
-    ]
+const PLASMID_PREFIXES = ['pUC', 'pET', 'pGEX', 'pcDNA', 'pEGFP', 'pGL3', 'pBR', 'pBABE', 'pLentG', 'pAAV'];
+const PLASMID_SUFFIXES = ['19', '28a(+)', '4T-1', '3.1(+)', '-N1', '-Basic', '322', 'puro', 'GFP', 'Cas9'];
+
+const generateDummyPlasmids = () => {
+  const list: any[] = [];
+  for (let i = 0; i < 300; i++) {
+    const prefix = PLASMID_PREFIXES[Math.floor(Math.random() * PLASMID_PREFIXES.length)];
+    const suffix = PLASMID_SUFFIXES[Math.floor(Math.random() * PLASMID_SUFFIXES.length)];
+    list.push({
+      id: `addgene_100${i}`,
+      name: `${prefix}${suffix}`,
+      description: `Target expression vector derived from ${prefix} backbone`,
+      size_bp: Math.floor(Math.random() * 8000) + 2000,
+      is_circular: true,
+      sequence: 'atgcggtctata'.repeat(15), 
+      features: []
+    });
   }
-];
+  // Guarantee the classic ones exist at the top
+  list[0] = { id: 'ad_2686', name: 'pUC19', description: 'High copy cloning vector used universally', size_bp: 2686, is_circular: true, sequence: 'tcgcgcgtttcggtgatgacggtg', features: [] };
+  list[1] = { id: 'ad_4361', name: 'pBR322', description: 'Classic E. coli cloning vector with dual selection', size_bp: 4361, is_circular: true, sequence: 'ttctcatgtttgacagcttatca', features: [] };
+  list[2] = { id: 'ad_4969', name: 'pGEX-4T-1', description: 'GST fusion expression vector for E. coli', size_bp: 4969, is_circular: true, sequence: 'acgttatcgactgcacggtgcac', features: [] };
+  return list;
+};
+
+const DUMMY_ADDGENE_RESULTS = generateDummyPlasmids();
 
 export default function AddgeneModal({ isOpen, onClose, onSelectVector, theme }: AddgeneModalProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   const [results, setResults] = useState(DUMMY_ADDGENE_RESULTS);
+  const [visibleCount, setVisibleCount] = useState(15);
 
   if (!isOpen) return null;
 
@@ -58,7 +47,6 @@ export default function AddgeneModal({ isOpen, onClose, onSelectVector, theme }:
     setSearchQuery(query);
     setIsSearching(true);
     
-    // Simulate network delay for API realism
     setTimeout(() => {
       const lowerQuery = query.toLowerCase();
       const filtered = DUMMY_ADDGENE_RESULTS.filter(r => 
@@ -67,9 +55,21 @@ export default function AddgeneModal({ isOpen, onClose, onSelectVector, theme }:
         r.id.toLowerCase().includes(lowerQuery)
       );
       setResults(filtered);
+      setVisibleCount(15); // Reset lazylist on new search
       setIsSearching(false);
     }, 400);
   };
+
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const { scrollTop, clientHeight, scrollHeight } = e.currentTarget;
+    if (scrollHeight - scrollTop <= clientHeight + 150) {
+      if (visibleCount < results.length) {
+        setVisibleCount(prev => Math.min(prev + 15, results.length));
+      }
+    }
+  };
+  
+  const displayResults = results.slice(0, visibleCount);
 
   const handleSelect = (vector: any) => {
     // Transform mock result into bio-parser ParsedSequence structure for VectorMap
@@ -131,20 +131,23 @@ export default function AddgeneModal({ isOpen, onClose, onSelectVector, theme }:
             Available Plasmids ({results.length})
           </div>
 
-          <div className={`flex flex-col h-72 overflow-y-auto rounded-xl border scrollbar-hide ${theme === 'dark' ? 'border-gray-800 bg-gray-950/50' : 'border-gray-200 bg-gray-50/50'}`}>
+          <div 
+            onScroll={handleScroll}
+            className={`flex flex-col h-72 overflow-y-auto rounded-xl border scrollbar-hide ${theme === 'dark' ? 'border-gray-800 bg-gray-950/50' : 'border-gray-200 bg-gray-50/50'}`}
+          >
             {isSearching ? (
               <div className="flex-1 flex flex-col items-center justify-center opacity-50">
                 <div className="w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mb-3"></div>
                 <span className={`text-sm ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>Searching Database...</span>
               </div>
-            ) : results.length === 0 ? (
+            ) : displayResults.length === 0 ? (
               <div className={`flex-1 flex flex-col items-center justify-center opacity-50 text-sm ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>
                 <Search size={32} className="mb-2 opacity-30" />
                 No matching vectors found.
               </div>
             ) : (
               <div className="flex flex-col divide-y divide-gray-200 dark:divide-gray-800">
-                {results.map(r => (
+                {displayResults.map(r => (
                   <button 
                     key={r.id}
                     onClick={() => handleSelect(r)}
