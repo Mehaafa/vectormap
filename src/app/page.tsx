@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import dynamic from 'next/dynamic';
-import { Activity, Beaker, FileText, Database, Settings, Layout, Download, Share2, ServerCrash, CheckCircle2, Upload } from 'lucide-react';
+import { Activity, Beaker, FileText, Database, Settings, Layout, Download, Share2, ServerCrash, CheckCircle2, Upload, Sun, Moon } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { parseSequenceFile, ParsedSequenceResult } from '@/lib/parsers';
 
@@ -14,6 +14,7 @@ export default function VectorMapDashboard() {
   const [parsedData, setParsedData] = useState<ParsedSequenceResult | null>(null);
   const [dbStatus, setDbStatus] = useState<'checking' | 'connected' | 'error'>('checking');
   const [currentView, setCurrentView] = useState<string>('Dashboard');
+  const [theme, setTheme] = useState<'light' | 'dark'>('dark');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -82,46 +83,53 @@ export default function VectorMapDashboard() {
   };
 
   return (
-    <div className="flex h-screen w-full bg-black text-white font-sans overflow-hidden">
+    <div className={`flex h-screen w-full font-sans overflow-hidden transition-colors duration-300 ${theme === 'dark' ? 'bg-black text-white' : 'bg-gray-50 text-gray-900'}`}>
       
       {/* Sidebar */}
-      <aside className="w-64 flex flex-col border-r border-gray-800 bg-gray-950">
-        <div className="h-16 flex items-center px-6 border-b border-gray-800">
+      <aside className={`w-64 flex flex-col border-r transition-colors duration-300 ${theme === 'dark' ? 'border-gray-800 bg-gray-950' : 'border-gray-300 bg-white'}`}>
+        <div className={`h-16 flex items-center px-6 border-b transition-colors duration-300 ${theme === 'dark' ? 'border-gray-800' : 'border-gray-200'}`}>
           <Beaker className="w-6 h-6 text-indigo-500 mr-3" />
-          <h1 className="text-lg font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-purple-400">
+          <h1 className="text-lg font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 to-purple-500">
             VectorMap Pro
           </h1>
         </div>
         
         <nav className="flex-1 p-4 space-y-2">
-          <NavItem icon={<Layout size={18} />} label="Dashboard" active={currentView === 'Dashboard'} onClick={() => setCurrentView('Dashboard')} />
-          <NavItem icon={<FileText size={18} />} label="Projects" active={currentView === 'Projects'} onClick={() => setCurrentView('Projects')} />
-          <NavItem icon={<Activity size={18} />} label="Enzyme Analysis" active={currentView === 'Enzyme Analysis'} onClick={() => setCurrentView('Enzyme Analysis')} />
-          <NavItem icon={<Database size={18} />} label="Features DB" active={currentView === 'Features DB'} onClick={() => setCurrentView('Features DB')} />
+          <NavItem icon={<Layout size={18} />} label="Dashboard" theme={theme} active={currentView === 'Dashboard'} onClick={() => setCurrentView('Dashboard')} />
+          <NavItem icon={<FileText size={18} />} label="Projects" theme={theme} active={currentView === 'Projects'} onClick={() => setCurrentView('Projects')} />
+          <NavItem icon={<Activity size={18} />} label="Enzyme Analysis" theme={theme} active={currentView === 'Enzyme Analysis'} onClick={() => setCurrentView('Enzyme Analysis')} />
+          <NavItem icon={<Database size={18} />} label="Features DB" theme={theme} active={currentView === 'Features DB'} onClick={() => setCurrentView('Features DB')} />
         </nav>
         
-        <div className="p-4 border-t border-gray-800 space-y-4">
-          <div className="flex items-center space-x-2 px-3 py-2 rounded-lg bg-gray-900 border border-gray-800">
+        <div className={`p-4 border-t space-y-4 transition-colors duration-300 ${theme === 'dark' ? 'border-gray-800' : 'border-gray-200'}`}>
+          <div className={`flex items-center space-x-2 px-3 py-2 rounded-lg border transition-colors duration-300 ${theme === 'dark' ? 'bg-gray-900 border-gray-800' : 'bg-gray-50 border-gray-200'}`}>
             {dbStatus === 'checking' && <span className="flex h-3 w-3 rounded-full bg-yellow-500 animate-pulse" />}
             {dbStatus === 'connected' && <CheckCircle2 size={16} className="text-emerald-500" />}
             {dbStatus === 'error' && <ServerCrash size={16} className="text-red-500" />}
-            <span className={`text-sm font-medium ${dbStatus === 'connected' ? 'text-emerald-400' : dbStatus === 'error' ? 'text-red-400' : 'text-yellow-400'}`}>
+            <span className={`text-sm font-medium ${dbStatus === 'connected' ? (theme === 'dark' ? 'text-emerald-400' : 'text-emerald-600') : dbStatus === 'error' ? 'text-red-500' : 'text-yellow-500'}`}>
               {dbStatus === 'checking' ? 'Connecting DB...' : dbStatus === 'connected' ? 'DB Connected' : 'DB Error'}
             </span>
           </div>
-          <NavItem icon={<Settings size={18} />} label="Settings" active={currentView === 'Settings'} onClick={() => setCurrentView('Settings')} />
+          <NavItem icon={<Settings size={18} />} label="Settings" theme={theme} active={currentView === 'Settings'} onClick={() => setCurrentView('Settings')} />
         </div>
       </aside>
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col h-full overflow-hidden">
         {/* Header */}
-        <header className="h-16 flex items-center justify-between px-8 border-b border-gray-800 bg-gray-900/40 backdrop-blur-md">
+        <header className={`h-16 flex items-center justify-between px-8 border-b transition-colors duration-300 ${theme === 'dark' ? 'border-gray-800 bg-gray-900/40 backdrop-blur-md' : 'border-gray-200 bg-white/60 backdrop-blur-md'}`}>
           <div className="flex items-center space-x-4">
-            <h2 className="text-sm font-medium text-gray-300">Project: <span className="text-white font-semibold">{parsedData?.parsedSequence?.name || 'pUC19 Optimization'}</span></h2>
-            <span className="px-2 py-0.5 rounded text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Saved</span>
+            <h2 className={`text-sm font-medium ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>Project: <span className={`font-semibold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>{parsedData?.parsedSequence?.name || 'pUC19 Optimization'}</span></h2>
+            <span className={`px-2 py-0.5 rounded text-xs font-medium border ${theme === 'dark' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-emerald-50 text-emerald-600 border-emerald-200'}`}>Saved</span>
           </div>
           <div className="flex items-center space-x-3">
+            <button 
+              onClick={() => setTheme(t => t === 'dark' ? 'light' : 'dark')}
+              className={`p-2 rounded-lg transition-colors border ${theme === 'dark' ? 'text-gray-400 border-gray-800 hover:text-white hover:bg-gray-800' : 'text-gray-500 border-gray-200 hover:text-gray-900 hover:bg-gray-100'}`}
+              title="Toggle Theme"
+            >
+              {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+            </button>
             <input 
               type="file" 
               ref={fileInputRef} 
@@ -144,7 +152,7 @@ export default function VectorMapDashboard() {
         </header>
 
         {/* Workspace Layout */}
-        <div className="flex-1 overflow-hidden flex flex-col">
+        <div className={`flex-1 overflow-hidden flex flex-col ${theme === 'dark' ? '' : 'bg-gray-50'}`}>
           {currentView === 'Dashboard' ? (
             <div className="flex-1 p-6 grid grid-cols-12 gap-6 overflow-hidden">
               {/* Center Area: Full width OVE Editor */}
@@ -171,11 +179,18 @@ export default function VectorMapDashboard() {
   );
 }
 
-function NavItem({ icon, label, active = false, onClick }: { icon: React.ReactNode, label: string, active?: boolean, onClick?: () => void }) {
+function NavItem({ icon, label, active = false, theme = 'dark', onClick }: { icon: React.ReactNode, label: string, active?: boolean, theme?: 'light'|'dark', onClick?: () => void }) {
+  const activeClass = theme === 'dark' 
+    ? 'bg-indigo-500/10 text-indigo-400 font-medium' 
+    : 'bg-indigo-50 text-indigo-600 font-medium';
+  const inactiveClass = theme === 'dark' 
+    ? 'text-gray-400 hover:bg-gray-800 hover:text-gray-200' 
+    : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900';
+    
   return (
     <button 
       onClick={onClick}
-      className={`w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg transition-colors ${active ? 'bg-indigo-500/10 text-indigo-400 font-medium' : 'text-gray-400 hover:bg-gray-800 hover:text-gray-200'}`}
+      className={`w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg transition-colors duration-200 cursor-pointer ${active ? activeClass : inactiveClass}`}
     >
       {icon}
       <span>{label}</span>
