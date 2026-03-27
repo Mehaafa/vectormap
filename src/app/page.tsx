@@ -140,26 +140,36 @@ export default function VectorMapDashboard() {
           <NavItem icon={<Layout size={18} />} label="Dashboard" theme={theme} active={currentView === 'Dashboard'} onClick={() => setCurrentView('Dashboard')} />
           
           {/* Sub-menu for User Vectors */}
-          {savedFiles.length > 0 && (
+          {currentView === 'Dashboard' && (
             <div className={`pl-4 py-2 space-y-1 border-l-2 ml-4 mb-2 ${theme === 'dark' ? 'border-gray-800' : 'border-gray-200'}`}>
-              <div className={`text-[10px] font-bold tracking-wider uppercase mb-2 ${theme === 'dark' ? 'text-gray-500' : 'text-gray-400'}`}>My Cloud Vectors</div>
-              {savedFiles.map(file => {
-                const isSelected = parsedData?.parsedSequence?.name === file.name;
-                return (
-                  <button 
-                    key={file.id}
-                    onClick={() => handleLoadFile(file)}
-                    className={`w-full flex items-center text-left px-3 py-1.5 text-xs rounded-md truncate transition-all ${
-                      isSelected 
-                        ? (theme === 'dark' ? 'bg-indigo-500/20 text-indigo-300 font-medium' : 'bg-indigo-50 border-indigo-200 text-indigo-700 font-medium')
-                        : (theme === 'dark' ? 'text-gray-400 hover:bg-gray-800 hover:text-gray-200' : 'text-gray-600 hover:bg-gray-100 uppercase')
-                    }`}
-                  >
-                    <span className="mr-2 opacity-70">🧬</span>
-                    <span className="truncate">{file.name}</span>
-                  </button>
-                );
-              })}
+              <div className={`text-[10px] font-bold tracking-wider uppercase mb-2 flex items-center justify-between ${theme === 'dark' ? 'text-gray-500' : 'text-gray-400'}`}>
+                <span>My Cloud Vectors</span>
+                <span className={`px-1.5 py-0.5 rounded-full text-[9px] ${theme === 'dark' ? 'bg-gray-800 text-gray-300' : 'bg-gray-200 text-gray-600'}`}>{savedFiles.length}</span>
+              </div>
+              
+              {savedFiles.length === 0 ? (
+                <div className={`text-[11px] p-2 mt-1 rounded border border-dashed text-center ${theme === 'dark' ? 'text-gray-500 border-gray-800' : 'text-gray-400 border-gray-300'}`}>
+                  아직 등록된 벡터가 없습니다.<br/>우측 상단 <b>Import File</b> 버튼으로<br/>파일을 추가해 보세요.
+                </div>
+              ) : (
+                savedFiles.map(file => {
+                  const isSelected = parsedData?.parsedSequence?.name === file.name;
+                  return (
+                    <button 
+                      key={file.id}
+                      onClick={() => handleLoadFile(file)}
+                      className={`w-full flex items-center text-left px-3 py-1.5 text-xs rounded-md truncate transition-all ${
+                        isSelected 
+                          ? (theme === 'dark' ? 'bg-indigo-500/20 text-indigo-300 font-medium' : 'bg-indigo-50 border-indigo-200 text-indigo-700 font-medium')
+                          : (theme === 'dark' ? 'text-gray-400 hover:bg-gray-800 hover:text-gray-200' : 'text-gray-600 hover:bg-gray-100 uppercase')
+                      }`}
+                    >
+                      <span className="mr-2 opacity-70">🧬</span>
+                      <span className="truncate">{file.name}</span>
+                    </button>
+                  );
+                })
+              )}
             </div>
           )}
 
