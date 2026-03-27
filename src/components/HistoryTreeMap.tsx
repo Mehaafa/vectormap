@@ -6,13 +6,22 @@ import { Scissors, Trash2, Save, FileText } from 'lucide-react';
 
 const CustomNode = ({ data, isConnectable }: any) => {
   return (
-    <div className={`px-4 py-3 shadow-xl rounded-xl border-2 bg-white flex flex-col items-center ${data.isRoot ? 'border-indigo-500' : 'border-gray-200'}`}>
+    <div className={`shadow-xl rounded-xl border-2 bg-white flex flex-col items-center overflow-hidden w-52 ${data.isRoot ? 'border-indigo-500' : 'border-gray-200'}`}>
       <Handle type="target" position={Position.Top} isConnectable={isConnectable} className="w-3 h-3 bg-indigo-500" />
-      <div className="flex items-center justify-center w-12 h-12 rounded-full bg-indigo-50 mb-2 shadow-inner">
-        {data.icon || <FileText className="text-indigo-500"/>}
+      {/* Plasmid Snapshot Thumbnail (or fallback icon) */}
+      {data.snapshot ? (
+        <div className="w-full h-36 flex items-center justify-center bg-gray-50 border-b border-gray-100 overflow-hidden">
+          <img src={data.snapshot} alt="Plasmid State" className="w-full h-full object-contain" />
+        </div>
+      ) : (
+        <div className="w-full h-28 flex items-center justify-center bg-indigo-50 border-b border-gray-100">
+          {data.icon || <FileText className="w-10 h-10 text-indigo-400"/>}
+        </div>
+      )}
+      <div className="px-4 py-2 w-full">
+        <div className="text-sm font-bold text-gray-800 text-center truncate">{data.label}</div>
+        <div className="text-xs text-indigo-500 mt-0.5 text-center">{data.subLabel}</div>
       </div>
-      <div className="text-sm font-bold text-gray-800">{data.label}</div>
-      <div className="text-xs text-gray-500 mt-1">{data.subLabel}</div>
       <Handle type="source" position={Position.Bottom} isConnectable={isConnectable} className="w-3 h-3 bg-indigo-500" />
     </div>
   );
@@ -47,10 +56,11 @@ export default function HistoryTreeMap({ theme, activeVectorName, externalOperat
       const liveNodes = externalOperations.map((op, i) => ({
         id: op.id,
         type: 'custom',
-        position: { x: 250, y: (i + 1) * 160 + 50 },
+        position: { x: 250, y: (i + 1) * 210 + 50 },
         data: {
           label: op.label,
           subLabel: `${op.size} bp`,
+          snapshot: op.snapshot,  // base64 plasmid screenshot
           icon: <span className="text-xl">✍️</span>
         }
       }));

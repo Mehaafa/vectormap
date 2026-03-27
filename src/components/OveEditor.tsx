@@ -2,6 +2,7 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
+import html2canvas from 'html2canvas';
 
 export default function OveEditor({ parsedSequence, onSequenceSave }: { parsedSequence?: any, onSequenceSave?: (seq: any) => void }) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -122,9 +123,30 @@ export default function OveEditor({ parsedSequence, onSequenceSave }: { parsedSe
             baselineSequence = latestSequence;
 
             clearTimeout(debounceTimer);
-            debounceTimer = setTimeout(() => {
+            debounceTimer = setTimeout(async () => {
+              // 🔬 Capture a live screenshot of the circular plasmid map
+              let snapshotDataUrl: string | undefined;
+              try {
+                // OVE renders its circular map inside a VectorMap SVG element
+                const oveSvg = document.querySelector('.veCircularView') as HTMLElement
+                         || document.querySelector('.veVectorViewer') as HTMLElement
+                         || containerRef.current as HTMLElement;
+                if (oveSvg) {
+                  const canvas = await html2canvas(oveSvg, {
+                    scale: 0.5,         // Keep the thumbnail compact
+                    backgroundColor: '#ffffff',
+                    useCORS: true,
+                    logging: false
+                  });
+                  snapshotDataUrl = canvas.toDataURL('image/png');
+                }
+              } catch (snapErr) {
+                // Non-fatal: If screenshot fails, history node still works with icon fallback
+                console.warn('Plasmid snapshot failed:', snapErr);
+              }
+
               if (onSequenceSave) {
-                onSequenceSave({...currentSeqData, _action: actionLabel});
+                onSequenceSave({...currentSeqData, _action: actionLabel, _snapshot: snapshotDataUrl});
               }
             }, 300);
           } else if (baselineSequence === '' && latestSequence) {

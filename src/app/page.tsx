@@ -44,7 +44,8 @@ export default function VectorMapDashboard() {
     const op = {
       id: Date.now().toString(),
       label: actionLabel === 'Manual Save' ? 'Manual Checkpoint' : actionLabel,
-      size: newSeqData.sequence.length
+      size: newSeqData.sequence.length,
+      snapshot: newSeqData._snapshot  // Base64 plasmid screenshot
     };
 
     if (actionLabel === 'Manual Save') {
