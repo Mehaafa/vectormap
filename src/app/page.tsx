@@ -3,7 +3,7 @@
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import dynamic from 'next/dynamic';
-import { Upload, File, Trash2, LogOut, Sun, Moon, Search, Sliders, Layout, Globe, Activity, Database, ChevronDown, ChevronRight, Beaker, FileText, X, Download, CheckCircle2, ServerCrash, Settings, GitFork } from 'lucide-react';
+import { Upload, File, Trash2, LogOut, Sun, Moon, Search, Sliders, Layout, Globe, Activity, Database, ChevronDown, ChevronRight, Beaker, FileText, X, Download, CheckCircle2, ServerCrash, Settings, GitFork, Microscope } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { parseSequenceFile, ParsedSequenceResult } from '@/lib/parsers';
 import AuthModal from '@/components/AuthModal';
@@ -302,11 +302,18 @@ export default function VectorMapDashboard() {
       
       {/* Sidebar */}
       <aside className={`w-64 flex flex-col border-r transition-colors duration-300 ${theme === 'dark' ? 'border-gray-800 bg-gray-950' : 'border-gray-300 bg-white'}`}>
-        <div className={`h-16 flex items-center px-6 border-b transition-colors duration-300 ${theme === 'dark' ? 'border-gray-800' : 'border-gray-200'}`}>
-          <Beaker className="w-6 h-6 text-indigo-500 mr-3 shrink-0" />
-          <span className="text-[13px] font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 to-purple-500 whitespace-nowrap">
-            VectorMap Pro
-          </span>
+        <div className={`h-[72px] flex items-center px-5 border-b transition-colors duration-300 ${theme === 'dark' ? 'border-gray-800' : 'border-gray-200'}`}>
+          <div className="w-10 h-10 rounded-xl bg-[#3b82f6] flex items-center justify-center mr-3 shrink-0 shadow-sm">
+            <Microscope className="w-5 h-5 text-white" />
+          </div>
+          <div className="flex flex-col justify-center">
+            <span className={`text-[16px] font-bold tracking-tight leading-tight ${theme === 'dark' ? 'text-white' : 'text-[#0f172a]'}`}>
+              K-Biofoundry
+            </span>
+            <span className={`text-[12px] font-medium leading-tight mt-0.5 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
+              백터맵디자인 모듈
+            </span>
+          </div>
         </div>
         
         <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
