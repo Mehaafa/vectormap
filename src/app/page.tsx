@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import dynamic from 'next/dynamic';
-import { Activity, Beaker, FileText, Database, Settings, Layout, Download, Share2, ServerCrash, CheckCircle2, Upload, Sun, Moon } from 'lucide-react';
+import { Activity, Beaker, FileText, Database, Settings, Layout, Download, Share2, ServerCrash, CheckCircle2, Upload, Sun, Moon, X } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { parseSequenceFile, ParsedSequenceResult } from '@/lib/parsers';
 import AuthModal from '@/components/AuthModal';
@@ -64,6 +64,22 @@ export default function VectorMapDashboard() {
     setSequence(fileData.sequence_data.sequence || '');
     setParsedData({ success: true, messages: [], parsedSequence: fileData.sequence_data });
     setCurrentView('Dashboard');
+  };
+
+  const handleDeleteFile = async (e: React.MouseEvent, fileId: string) => {
+    e.stopPropagation();
+    if (!confirm('정말 이 벡터를 리스트에서 지우시겠습니까?')) return;
+    
+    const { error } = await supabase.from('sequences').delete().eq('id', fileId);
+    if (!error) {
+      setSavedFiles(prev => prev.filter(f => f.id !== fileId));
+      // Reset view if they delete the file they are currently viewing
+      if (parsedData?.parsedSequence?.name === savedFiles.find(f => f.id === fileId)?.name) {
+        setParsedData(null);
+      }
+    } else {
+      alert('삭제 실패: ' + error.message);
+    }
   };
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -159,18 +175,26 @@ export default function VectorMapDashboard() {
                 savedFiles.map(file => {
                   const isSelected = parsedData?.parsedSequence?.name === file.name;
                   return (
-                    <button 
-                      key={file.id}
-                      onClick={() => handleLoadFile(file)}
-                      className={`w-full flex items-center text-left px-3 py-1.5 text-xs rounded-md truncate transition-all ${
-                        isSelected 
-                          ? (theme === 'dark' ? 'bg-indigo-500/20 text-indigo-300 font-medium' : 'bg-indigo-50 border-indigo-200 text-indigo-700 font-medium')
-                          : (theme === 'dark' ? 'text-gray-400 hover:bg-gray-800 hover:text-gray-200' : 'text-gray-600 hover:bg-gray-100 uppercase')
-                      }`}
-                    >
-                      <span className="mr-2 opacity-70">🧬</span>
-                      <span className="truncate">{file.name}</span>
-                    </button>
+                    <div key={file.id} className="group relative w-full flex items-center">
+                      <button 
+                        onClick={() => handleLoadFile(file)}
+                        className={`w-full flex items-center text-left px-3 py-1.5 text-xs rounded-md truncate transition-all pr-8 ${
+                          isSelected 
+                            ? (theme === 'dark' ? 'bg-indigo-500/20 text-indigo-300 font-medium' : 'bg-indigo-50 border-indigo-200 text-indigo-700 font-medium')
+                            : (theme === 'dark' ? 'text-gray-400 hover:bg-gray-800 hover:text-gray-200' : 'text-gray-600 hover:bg-gray-100 uppercase')
+                        }`}
+                      >
+                        <span className="mr-2 opacity-70">🧬</span>
+                        <span className="truncate">{file.name}</span>
+                      </button>
+                      <button
+                        onClick={(e) => handleDeleteFile(e, file.id)}
+                        className={`absolute right-1 p-1 rounded opacity-0 group-hover:opacity-100 transition-opacity ${theme === 'dark' ? 'text-gray-500 hover:text-red-400 hover:bg-gray-700' : 'text-gray-400 hover:text-red-500 hover:bg-gray-200'}`}
+                        title="Delete Vector"
+                      >
+                        <X size={14} />
+                      </button>
+                    </div>
                   );
                 })
               )}
@@ -206,8 +230,8 @@ export default function VectorMapDashboard() {
         {/* Header */}
         <header className={`h-16 flex items-center justify-between px-8 border-b transition-colors duration-300 ${theme === 'dark' ? 'border-gray-800 bg-gray-900/40 backdrop-blur-md' : 'border-gray-200 bg-white/60 backdrop-blur-md'}`}>
           <div className="flex items-center space-x-4">
-            <h2 className={`text-sm font-medium ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>Project: <span className={`font-semibold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>{parsedData?.parsedSequence?.name || 'pUC19 Optimization'}</span></h2>
-            <span className={`px-2 py-0.5 rounded text-xs font-medium border ${theme === 'dark' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-emerald-50 text-emerald-600 border-emerald-200'}`}>Saved</span>
+            <h2 className={`text-sm font-medium ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>Project: <span className={`font-semibold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>{parsedData?.parsedSequence?.name || 'Untitled Vector'}</span></h2>
+            {parsedData && <span className={`px-2 py-0.5 rounded text-xs font-medium border ${theme === 'dark' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-emerald-50 text-emerald-600 border-emerald-200'}`}>Saved</span>}
           </div>
           <div className="flex items-center space-x-3">
             <button 
