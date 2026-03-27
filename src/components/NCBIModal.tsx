@@ -57,7 +57,7 @@ export default function NCBIModal({ isOpen, onClose, onSelectVector, theme }: NC
         };
       });
       
-      setResults(items.filter(item => item.name && item.size_bp)); // filter out invalid ones
+      setResults(items.filter((item: any) => item.name && item.size_bp)); // filter out invalid ones
       setVisibleCount(15);
     } catch (err: any) {
       console.error(err);
