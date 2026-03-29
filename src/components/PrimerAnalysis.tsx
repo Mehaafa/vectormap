@@ -252,18 +252,24 @@ export default function PrimerAnalysis({
                        <h4 className="font-bold text-sm truncate max-w-[150px]">{p.name}</h4>
                        <div className="flex items-center space-x-1">
                          <button 
-                           onClick={() => {
-                             console.log('Applying primer to map:', p.name);
+                           onMouseDown={() => {
+                             console.log('Button MouseDown:', p.name);
                              onApplyPrimer?.(p);
                            }}
-                           className="p-1.5 rounded bg-indigo-500/20 text-indigo-500 hover:bg-indigo-500 hover:text-white transition-all shadow-sm"
+                           onClick={(e) => {
+                             e.preventDefault();
+                             console.log('Button Click:', p.name);
+                             onApplyPrimer?.(p);
+                           }}
+                           className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-indigo-500 text-white hover:bg-indigo-600 transition-all shadow-md active:scale-95 group shrink-0"
                            title="Add this Primer to Map"
                          >
-                           <PlusCircle size={14} />
+                           <PlusCircle size={14} className="pointer-events-none" />
+                           <span className="text-[11px] font-bold pointer-events-none">Add to Map</span>
                          </button>
                          <button 
                            onClick={() => removePrimer(p.id)}
-                           className="p-1.5 rounded bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white transition-all"
+                           className="p-1.5 rounded-lg bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white transition-all shadow-sm"
                          >
                            <Trash2 size={12} />
                          </button>

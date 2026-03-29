@@ -5,6 +5,8 @@ import React, { useEffect, useRef, useState } from 'react';
 
 export default function OveEditor({ parsedSequence, onSequenceSave }: { parsedSequence?: any, onSequenceSave?: (seq: any) => void }) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const editorInstanceRef = useRef<any>(null); // 🔥 Store editor instance to prevent re-creation
+  const isInternalUpdateRef = useRef<boolean>(false); // 🛡️ Flag to prevent loop with onSequenceSave
   const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
@@ -45,44 +47,38 @@ export default function OveEditor({ parsedSequence, onSequenceSave }: { parsedSe
 
   useEffect(() => {
     if (isLoaded && containerRef.current && (window as any).createVectorEditor) {
-      const vectorEditor = (window as any).createVectorEditor(containerRef.current, {
-        editorName: 'VectorMapProto',
-        isFullscreen: false, // Ensure it stays within our custom dashboard frame!
-        showMenuBar: true,
-        readOnly: false, // 🔥 Force unlocking the editor to allow pasting/editing
-        onSave: function(event: any, sequenceData: any, editorState: any, onSuccessCallback: any) {
-          // Manual Save Hook (Fallback)
-          if (onSequenceSave) {
-            onSequenceSave({...sequenceData, _action: 'Manual Save'});
+      if (!editorInstanceRef.current) {
+        // Only initialize once!
+        editorInstanceRef.current = (window as any).createVectorEditor(containerRef.current, {
+          editorName: 'VectorMapProto',
+          isFullscreen: false,
+          showMenuBar: true,
+          readOnly: false,
+          onSave: function(event: any, sequenceData: any) {
+            if (onSequenceSave) {
+              onSequenceSave({...sequenceData, _action: 'Manual Save'});
+            }
+          },
+          ToolBarProps: {
+            toolList: [
+              "undoTool", "redoTool", "cutsiteTool", "featureTool", "oligoTool", "orfTool", "editTool", "findTool", "visibilityTool"
+            ]
           }
-          onSuccessCallback();
-        },
-        ToolBarProps: {
-          toolList: [
-            "undoTool", "redoTool", "cutsiteTool", "featureTool", "oligoTool", "orfTool", "editTool", "findTool", "visibilityTool"
-          ]
-        }
-      });
+        });
+      }
+      
+      const vectorEditor = editorInstanceRef.current;
       
       // Pass the parsed sequence data if it exists
       if (parsedSequence) {
+        // 🔒 Lock updates during internal sync to prevent infinite loops
+        isInternalUpdateRef.current = true;
         vectorEditor.updateEditor({
           sequenceData: parsedSequence,
           readOnly: false
         });
-      } else {
-        // Load a mockup template if none
-        vectorEditor.updateEditor({
-          readOnly: false,
-          sequenceData: {
-            name: 'Untitled Vector',
-            circular: true,
-            sequence: 'TTTTGAGAATGCGTACGTAGCTAGCTAGCATCGATCGATCGATCGAATGCGTACGTAGCTAGCTAGCATCGATCGATCGATCGAATGCGTACGTAGCTAGCTAGCATCGATCGATCGATCGA',
-            features: [
-              { id: '1', start: 0, end: 10, type: 'promoter', name: 'Example Promoter' }
-            ]
-          }
-        });
+        // 🔓 Unlock after sync (short timeout to handle async state updates)
+        setTimeout(() => { isInternalUpdateRef.current = false; }, 100);
       }
     }
   }, [isLoaded, parsedSequence]);
@@ -103,6 +99,8 @@ export default function OveEditor({ parsedSequence, onSequenceSave }: { parsedSe
         clearInterval(checkStoreInterval); // Found it! Stop polling.
 
         unsubscribe = store.subscribe(() => {
+          if (isInternalUpdateRef.current) return; // 🔒 Skip if update triggered by prop change
+
           const state = store.getState();
           const editorState = state?.VectorEditor?.VectorMapProto;
           if (!editorState) return;

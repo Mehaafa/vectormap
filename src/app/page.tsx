@@ -42,7 +42,10 @@ export default function VectorMapDashboard() {
   const handleSequenceSave = useCallback(async (newSeqData: any) => {
     const actionLabel = newSeqData._action || 'Sequence Edited';
     
-    // Auto-tracked Live Sequence Edit: Push silently to local component state array
+    // 🛡️ Prevent redundant updates if data hasn't changed (loop protection)
+    if (parsedData?.parsedSequence && JSON.stringify(parsedData.parsedSequence) === JSON.stringify(newSeqData)) {
+      return;
+    }
     const op = {
       id: Date.now().toString(),
       label: actionLabel === 'Manual Save' ? 'Manual Checkpoint' : actionLabel,
@@ -324,64 +327,60 @@ export default function VectorMapDashboard() {
   }, [parsedData]);
 
   const handleApplyPrimer = useCallback((primer: any) => {
-    console.log('handleApplyPrimer called with:', primer);
-    if (!parsedData || !parsedData.parsedSequence) {
-      console.warn('No active vector data found to apply primer.');
-      return;
-    }
+    // 🛡️ Use functional update for absolute state consistency
+    setParsedData((prev: any) => {
+      if (!prev || !prev.parsedSequence) {
+        alert('분석할 벡터 데이터가 없습니다.');
+        return prev;
+      }
 
-    const seq = parsedData.parsedSequence.sequence.toUpperCase();
-    const query = primer.sequence.toUpperCase();
-    
-    // 1. Try Forward matching
-    let findPos = seq.indexOf(query);
-    let strand = 1;
+      console.log('handleApplyPrimer executing with latest state for:', primer.name);
+      
+      const seq = prev.parsedSequence.sequence.toUpperCase();
+      const query = primer.sequence.toUpperCase();
+      
+      let findPos = seq.indexOf(query);
+      let strand = 1;
 
-    // 2. Try Reverse Complement matching if forward fails
-    if (findPos === -1) {
-      const rc = query.split('').reverse().map((b: string) => {
-        if (b === 'A') return 'T';
-        if (b === 'T') return 'A';
-        if (b === 'G') return 'C';
-        if (b === 'C') return 'G';
-        return b;
-      }).join('');
-      findPos = seq.indexOf(rc);
-      strand = -1;
-    }
-    
-    if (findPos === -1) {
-      alert('현재 맵 서열에서 해당 프라이머(Forward/Reverse)를 찾을 수 없습니다. 서열이 정확한지 확인하세요.');
-      return;
-    }
+      if (findPos === -1) {
+        const rc = query.split('').reverse().map((b: string) => {
+          const map: any = { 'A':'T', 'T':'A', 'G':'C', 'C':'G' };
+          return map[b] || b;
+        }).join('');
+        findPos = seq.indexOf(rc);
+        strand = -1;
+      }
+      
+      if (findPos === -1) {
+        alert(`맵에서 '${query}' 서열을 찾을 수 없습니다. (정방향/역상보 모두 검색함)`);
+        return prev;
+      }
 
-    // 🔥 Switch view immediately to provide instant feedback
-    setCurrentView('Dashboard');
-    setDashboardTab('Map');
+      const newFeature = {
+        id: `primer-${primer.name}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        name: `[Primer] ${primer.name}`,
+        type: 'misc_feature', 
+        start: findPos,
+        end: findPos + query.length - 1,
+        strand: (strand === 1 ? 1 : -1),
+        color: '#3b82f6', 
+        notes: { Tm: `${primer.tm}°C`, GC: `${primer.gc}%` }
+      };
 
-    const newFeature = {
-      id: `primer-${primer.name}-${Date.now()}-${Math.random()}`,
-      name: primer.name,
-      type: 'primer',
-      start: findPos,
-      end: findPos + query.length - 1,
-      strand: strand,
-      color: '#3b82f6', // Dedicated Blue color for primers
-      notes: { Tm: `${primer.tm}°C`, GC: `${primer.gc}%` }
-    };
+      // Ensure view switch happens
+      setCurrentView('Dashboard');
+      setDashboardTab('Map');
 
-    const updatedSequence = {
-      ...parsedData.parsedSequence,
-      features: [...(parsedData.parsedSequence.features || []), newFeature]
-    };
-
-    setParsedData({
-      ...parsedData,
-      parsedSequence: updatedSequence
+      return {
+        ...prev,
+        parsedSequence: {
+          ...prev.parsedSequence,
+          features: [...(prev.parsedSequence.features || []), newFeature],
+          primers: [...(prev.parsedSequence.primers || []), { ...newFeature, type: 'primer_bind', sequence: query }]
+        }
+      };
     });
-    
-    console.log('Successfully added primer to map at pos:', findPos);
-  }, [parsedData]);
+  }, []); // Stable reference
 
   if (!session) {
     return (
