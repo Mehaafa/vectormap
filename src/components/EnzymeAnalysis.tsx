@@ -197,7 +197,7 @@ export default function EnzymeAnalysis({
 }: { 
   parsedSequence?: any; 
   theme: string;
-  onApplyEnzymes?: (name: string, positions: number[]) => void;
+  onApplyEnzymes?: (name: string, positions: number[], recognitionLen: number) => void;
 }) {
 
   const sequence: string = parsedSequence?.sequence ?? '';
@@ -495,7 +495,7 @@ export default function EnzymeAnalysis({
                       </span>
                       {selectedResult && selectedResult.cutCount > 0 && (
                         <button 
-                          onClick={() => onApplyEnzymes?.(selectedEnzyme.name, selectedResult.cutSites.map(s => s.position))}
+                          onClick={() => onApplyEnzymes?.(selectedEnzyme.name, selectedResult.cutSites.map(s => s.position), selectedEnzyme.recognitionSeq.length)}
                           className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-[10px] font-bold shadow-lg shadow-purple-900/40 transition-all hover:scale-105"
                         >
                           ✨ 맵에 전체 추가 (Purple)
@@ -528,7 +528,7 @@ export default function EnzymeAnalysis({
                             {((site.position / seqLen) * 100).toFixed(1)}%
                           </span>
                           <button 
-                            onClick={(e) => { e.stopPropagation(); onApplyEnzymes?.(selectedEnzyme.name, [site.position]); }}
+                            onClick={(e) => { e.stopPropagation(); onApplyEnzymes?.(selectedEnzyme.name, [site.position], selectedEnzyme.recognitionSeq.length); }}
                             className={`p-1.5 rounded-md transition-all ${theme === 'dark' ? 'hover:bg-purple-900/50 text-purple-400' : 'hover:bg-purple-50 text-purple-600'}`}
                             title="이 위치만 맵에 추가"
                           >

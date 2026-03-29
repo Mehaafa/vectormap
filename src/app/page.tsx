@@ -296,7 +296,7 @@ export default function VectorMapDashboard() {
     }
   };
 
-  const handleApplyEnzymes = useCallback((name: string, positions: number[]) => {
+  const handleApplyEnzymes = useCallback((name: string, positions: number[], recognitionLen: number) => {
     if (!parsedData || !parsedData.parsedSequence) return;
 
     const newFeatures = positions.map(pos => ({
@@ -304,7 +304,7 @@ export default function VectorMapDashboard() {
       name: `${name}`,
       type: 'restriction_site',
       start: pos,
-      end: pos,
+      end: pos + recognitionLen - 1, // End at the end of recognition sequence
       strand: 1,
       color: '#a855f7' // Purple as requested
     }));
@@ -319,7 +319,7 @@ export default function VectorMapDashboard() {
       parsedSequence: updatedSequence
     });
 
-    alert(`${name} 효소 부위 ${positions.length}개가 맵에 추가되었습니다 (자주색). Dashboard 탭에서 확인하세요!`);
+    alert(`${name} 효소 인식 서열(${recognitionLen}bp) ${positions.length}곳이 맵에 추가되었습니다 (자주색). Dashboard 탭에서 확인하세요!`);
   }, [parsedData]);
 
   if (!session) {
