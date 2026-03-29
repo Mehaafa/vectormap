@@ -9,6 +9,7 @@ import { parseSequenceFile, ParsedSequenceResult } from '@/lib/parsers';
 import AuthModal from '@/components/AuthModal';
 import AddgeneModal from '@/components/AddgeneModal';
 import NCBIModal from '@/components/NCBIModal';
+import EnzymeAnalysis from '@/components/EnzymeAnalysis';
 
 // Dynamically import complex client modules to skip Server Side Rendering (SSR) 
 // since they rely on browser globals like window or internal DOM metrics.
@@ -550,6 +551,13 @@ export default function VectorMapDashboard() {
                   ))}
                 </div>
               )}
+            </div>
+          ) : currentView === 'Enzyme Analysis' ? (
+            <div className="flex-1 flex flex-col overflow-hidden">
+              <EnzymeAnalysis
+                parsedSequence={parsedData?.parsedSequence}
+                theme={theme}
+              />
             </div>
           ) : (
             <div className="flex-1 flex flex-col items-center justify-center text-center p-8">
