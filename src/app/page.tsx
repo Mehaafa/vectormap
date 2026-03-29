@@ -515,6 +515,19 @@ export default function VectorMapDashboard() {
               <Upload size={15} />
               <span>Local File</span>
             </button>
+            <button 
+              onClick={() => {
+                if (parsedData?.parsedSequence) {
+                  handleSequenceSave({ ...parsedData.parsedSequence, _action: 'Manual Save' });
+                } else {
+                  alert('저장할 벡터 데이터가 없습니다.');
+                }
+              }}
+              className={`flex items-center space-x-2 px-4 py-1.5 rounded-lg text-sm font-medium transition-all shadow-lg ${theme === 'dark' ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-900/20' : 'bg-emerald-500 hover:bg-emerald-600 text-white shadow-emerald-500/20'}`}
+            >
+              <Database size={16} />
+              <span>Save to Cloud</span>
+            </button>
             <button className="flex items-center space-x-2 px-4 py-1.5 rounded-lg text-sm font-medium bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-500/20 transition-all">
               <Download size={16} />
               <span>Export</span>
