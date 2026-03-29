@@ -296,6 +296,32 @@ export default function VectorMapDashboard() {
     }
   };
 
+  const handleApplyEnzymes = useCallback((name: string, positions: number[]) => {
+    if (!parsedData || !parsedData.parsedSequence) return;
+
+    const newFeatures = positions.map(pos => ({
+      id: `enzyme-${name}-${pos}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      name: `${name}`,
+      type: 'restriction_site',
+      start: pos,
+      end: pos,
+      strand: 1,
+      color: '#a855f7' // Purple as requested
+    }));
+
+    const updatedSequence = {
+      ...parsedData.parsedSequence,
+      features: [...(parsedData.parsedSequence.features || []), ...newFeatures]
+    };
+
+    setParsedData({
+      ...parsedData,
+      parsedSequence: updatedSequence
+    });
+
+    alert(`${name} 효소 부위 ${positions.length}개가 맵에 추가되었습니다 (자주색). Dashboard 탭에서 확인하세요!`);
+  }, [parsedData]);
+
   if (!session) {
     return (
       <div className={`flex h-screen w-full font-sans overflow-hidden transition-colors duration-300 ${theme === 'dark' ? 'bg-black' : 'bg-gray-50'}`}>
@@ -557,6 +583,7 @@ export default function VectorMapDashboard() {
               <EnzymeAnalysis
                 parsedSequence={parsedData?.parsedSequence}
                 theme={theme}
+                onApplyEnzymes={handleApplyEnzymes}
               />
             </div>
           ) : (

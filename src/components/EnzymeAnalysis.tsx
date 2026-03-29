@@ -193,8 +193,12 @@ function GelPanel({
 
 // ─── Main EnzymeAnalysis Component ────────────────────────────────────────
 export default function EnzymeAnalysis({
-  parsedSequence, theme,
-}: { parsedSequence?: any; theme: string }) {
+  parsedSequence, theme, onApplyEnzymes,
+}: { 
+  parsedSequence?: any; 
+  theme: string;
+  onApplyEnzymes?: (name: string, positions: number[]) => void;
+}) {
 
   const sequence: string = parsedSequence?.sequence ?? '';
   const circular: boolean = parsedSequence?.circular ?? true;
@@ -485,9 +489,19 @@ export default function EnzymeAnalysis({
                         <span>타입: {selectedEnzyme.type}</span>
                       </div>
                     </div>
-                    <span className={`text-3xl font-black ${selectedResult?.cutCount === 1 ? 'text-emerald-500' : selectedResult?.cutCount === 0 ? 'text-gray-400' : 'text-amber-500'}`}>
-                      {selectedResult?.cutCount ?? 0}
-                    </span>
+                    <div className="flex flex-col items-end gap-2">
+                      <span className={`text-3xl font-black ${selectedResult?.cutCount === 1 ? 'text-emerald-500' : selectedResult?.cutCount === 0 ? 'text-gray-400' : 'text-amber-500'}`}>
+                        {selectedResult?.cutCount ?? 0}
+                      </span>
+                      {selectedResult && selectedResult.cutCount > 0 && (
+                        <button 
+                          onClick={() => onApplyEnzymes?.(selectedEnzyme.name, selectedResult.cutSites.map(s => s.position))}
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-[10px] font-bold shadow-lg shadow-purple-900/40 transition-all hover:scale-105"
+                        >
+                          ✨ 맵에 전체 추가 (Purple)
+                        </button>
+                      )}
+                    </div>
                   </div>
                   <div className="flex gap-2 flex-wrap">
                     {selectedEnzyme.suppliers.map(s => (
@@ -513,6 +527,13 @@ export default function EnzymeAnalysis({
                           <span className={`ml-auto text-xs ${theme === 'dark' ? 'text-gray-500' : 'text-gray-400'}`}>
                             {((site.position / seqLen) * 100).toFixed(1)}%
                           </span>
+                          <button 
+                            onClick={(e) => { e.stopPropagation(); onApplyEnzymes?.(selectedEnzyme.name, [site.position]); }}
+                            className={`p-1.5 rounded-md transition-all ${theme === 'dark' ? 'hover:bg-purple-900/50 text-purple-400' : 'hover:bg-purple-50 text-purple-600'}`}
+                            title="이 위치만 맵에 추가"
+                          >
+                            <CheckSquare size={14} />
+                          </button>
                         </div>
                       ))}
                     </div>
