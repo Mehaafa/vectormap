@@ -3,7 +3,7 @@
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import dynamic from 'next/dynamic';
-import { Upload, File, Trash2, LogOut, Sun, Moon, Search, Sliders, Layout, Globe, Activity, Database, ChevronDown, ChevronRight, Beaker, FileText, X, Download, CheckCircle2, ServerCrash, Settings, GitFork, Microscope, Zap } from 'lucide-react';
+import { Upload, File, Trash2, LogOut, Sun, Moon, Search, Sliders, Layout, Globe, Activity, Database, ChevronDown, ChevronRight, Beaker, FileText, X, Download, CheckCircle2, ServerCrash, Settings, GitFork, Microscope, Zap, ShieldCheck } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { parseSequenceFile, ParsedSequenceResult } from '@/lib/parsers';
 import AuthModal from '@/components/AuthModal';
@@ -16,6 +16,7 @@ const OveEditor = dynamic(() => import('@/components/OveEditor'), { ssr: false }
 const HistoryTreeMap = dynamic(() => import('@/components/HistoryTreeMap'), { ssr: false });
 const EnzymeAnalysis = dynamic(() => import('@/components/EnzymeAnalysis'), { ssr: false });
 const PrimerAnalysis = dynamic(() => import('@/components/PrimerAnalysis'), { ssr: false });
+const CloningAnalysis = dynamic(() => import('@/components/CloningAnalysis'), { ssr: false });
 
 export default function VectorMapDashboard() {
   const [sequence, setSequence] = useState<string>('ATGCGTACGTAGCTAGCTAGCATCGATCGATCGATCGAATGCGTACGTAGCTAGCTAGCATCGATCGATCGATCGAATGCGTACGTAGCTAGCTAGCATCGATCGATCGATCGA');
@@ -483,6 +484,7 @@ export default function VectorMapDashboard() {
           <NavItem icon={<FileText size={18} />} label="Projects Layout" theme={theme} active={currentView === 'Projects'} onClick={() => setCurrentView('Projects')} />
           <NavItem icon={<Activity size={18} />} label="Enzyme Analysis" theme={theme} active={currentView === 'Enzyme Analysis'} onClick={() => setCurrentView('Enzyme Analysis')} />
           <NavItem icon={<Zap size={18} />} label="Primer Analysis" theme={theme} active={currentView === 'Primer Analysis'} onClick={() => setCurrentView('Primer Analysis')} />
+          <NavItem icon={<ShieldCheck size={18} />} label="Cloning Analysis" theme={theme} active={currentView === 'Cloning Analysis'} onClick={() => setCurrentView('Cloning Analysis')} />
           <NavItem icon={<Database size={18} />} label="Features DB" theme={theme} active={currentView === 'Features DB'} onClick={() => setCurrentView('Features DB')} />
         </nav>
         
@@ -666,6 +668,12 @@ export default function VectorMapDashboard() {
                 parsedSequence={parsedData?.parsedSequence}
                 theme={theme}
                 onApplyPrimer={handleApplyPrimer}
+              />
+            </div>
+          ) : currentView === 'Cloning Analysis' ? (
+            <div className="flex-1 flex flex-col overflow-hidden">
+              <CloningAnalysis
+                theme={theme}
               />
             </div>
           ) : (
