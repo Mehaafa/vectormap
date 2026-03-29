@@ -3,7 +3,7 @@
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import dynamic from 'next/dynamic';
-import { Upload, File, Trash2, LogOut, Sun, Moon, Search, Sliders, Layout, Globe, Activity, Database, ChevronDown, ChevronRight, Beaker, FileText, X, Download, CheckCircle2, ServerCrash, Settings, GitFork, Microscope } from 'lucide-react';
+import { Upload, File, Trash2, LogOut, Sun, Moon, Search, Sliders, Layout, Globe, Activity, Database, ChevronDown, ChevronRight, Beaker, FileText, X, Download, CheckCircle2, ServerCrash, Settings, GitFork, Microscope, Zap } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { parseSequenceFile, ParsedSequenceResult } from '@/lib/parsers';
 import AuthModal from '@/components/AuthModal';
@@ -15,6 +15,7 @@ import NCBIModal from '@/components/NCBIModal';
 const OveEditor = dynamic(() => import('@/components/OveEditor'), { ssr: false });
 const HistoryTreeMap = dynamic(() => import('@/components/HistoryTreeMap'), { ssr: false });
 const EnzymeAnalysis = dynamic(() => import('@/components/EnzymeAnalysis'), { ssr: false });
+const PrimerAnalysis = dynamic(() => import('@/components/PrimerAnalysis'), { ssr: false });
 
 export default function VectorMapDashboard() {
   const [sequence, setSequence] = useState<string>('ATGCGTACGTAGCTAGCTAGCATCGATCGATCGATCGAATGCGTACGTAGCTAGCTAGCATCGATCGATCGATCGAATGCGTACGTAGCTAGCTAGCATCGATCGATCGATCGA');
@@ -322,6 +323,66 @@ export default function VectorMapDashboard() {
     alert(`${name} 효소 인식 서열(${recognitionLen}bp) ${positions.length}곳이 맵에 추가되었습니다 (자주색). Dashboard 탭에서 확인하세요!`);
   }, [parsedData]);
 
+  const handleApplyPrimer = useCallback((primer: any) => {
+    console.log('handleApplyPrimer called with:', primer);
+    if (!parsedData || !parsedData.parsedSequence) {
+      console.warn('No active vector data found to apply primer.');
+      return;
+    }
+
+    const seq = parsedData.parsedSequence.sequence.toUpperCase();
+    const query = primer.sequence.toUpperCase();
+    
+    // 1. Try Forward matching
+    let findPos = seq.indexOf(query);
+    let strand = 1;
+
+    // 2. Try Reverse Complement matching if forward fails
+    if (findPos === -1) {
+      const rc = query.split('').reverse().map((b: string) => {
+        if (b === 'A') return 'T';
+        if (b === 'T') return 'A';
+        if (b === 'G') return 'C';
+        if (b === 'C') return 'G';
+        return b;
+      }).join('');
+      findPos = seq.indexOf(rc);
+      strand = -1;
+    }
+    
+    if (findPos === -1) {
+      alert('현재 맵 서열에서 해당 프라이머(Forward/Reverse)를 찾을 수 없습니다. 서열이 정확한지 확인하세요.');
+      return;
+    }
+
+    // 🔥 Switch view immediately to provide instant feedback
+    setCurrentView('Dashboard');
+    setDashboardTab('Map');
+
+    const newFeature = {
+      id: `primer-${primer.name}-${Date.now()}-${Math.random()}`,
+      name: primer.name,
+      type: 'primer',
+      start: findPos,
+      end: findPos + query.length - 1,
+      strand: strand,
+      color: '#3b82f6', // Dedicated Blue color for primers
+      notes: { Tm: `${primer.tm}°C`, GC: `${primer.gc}%` }
+    };
+
+    const updatedSequence = {
+      ...parsedData.parsedSequence,
+      features: [...(parsedData.parsedSequence.features || []), newFeature]
+    };
+
+    setParsedData({
+      ...parsedData,
+      parsedSequence: updatedSequence
+    });
+    
+    console.log('Successfully added primer to map at pos:', findPos);
+  }, [parsedData]);
+
   if (!session) {
     return (
       <div className={`flex h-screen w-full font-sans overflow-hidden transition-colors duration-300 ${theme === 'dark' ? 'bg-black' : 'bg-gray-50'}`}>
@@ -422,6 +483,7 @@ export default function VectorMapDashboard() {
 
           <NavItem icon={<FileText size={18} />} label="Projects Layout" theme={theme} active={currentView === 'Projects'} onClick={() => setCurrentView('Projects')} />
           <NavItem icon={<Activity size={18} />} label="Enzyme Analysis" theme={theme} active={currentView === 'Enzyme Analysis'} onClick={() => setCurrentView('Enzyme Analysis')} />
+          <NavItem icon={<Zap size={18} />} label="Primer Analysis" theme={theme} active={currentView === 'Primer Analysis'} onClick={() => setCurrentView('Primer Analysis')} />
           <NavItem icon={<Database size={18} />} label="Features DB" theme={theme} active={currentView === 'Features DB'} onClick={() => setCurrentView('Features DB')} />
         </nav>
         
@@ -597,6 +659,14 @@ export default function VectorMapDashboard() {
                 parsedSequence={parsedData?.parsedSequence}
                 theme={theme}
                 onApplyEnzymes={handleApplyEnzymes}
+              />
+            </div>
+          ) : currentView === 'Primer Analysis' ? (
+            <div className="flex-1 flex flex-col overflow-hidden">
+              <PrimerAnalysis
+                parsedSequence={parsedData?.parsedSequence}
+                theme={theme}
+                onApplyPrimer={handleApplyPrimer}
               />
             </div>
           ) : (

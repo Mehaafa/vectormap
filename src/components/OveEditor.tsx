@@ -133,11 +133,12 @@ export default function OveEditor({ parsedSequence, onSequenceSave }: { parsedSe
                 if (svgEl) {
                   // Clone and fix dimensions so the SVG renders standalone
                   const clone = svgEl.cloneNode(true) as SVGElement;
-                  const bbox = (svgEl as SVGGraphicsElement).getBBox?.();
-                  const w = svgEl.clientWidth || 400;
-                  const h = svgEl.clientHeight || 400;
+                  const bbox = (svgEl as any).getBBox?.() || { width: 400, height: 400 };
+                  const w = Math.max(svgEl.clientWidth || bbox.width, 100);
+                  const h = Math.max(svgEl.clientHeight || bbox.height, 100);
                   clone.setAttribute('width', String(w));
                   clone.setAttribute('height', String(h));
+                  clone.setAttribute('viewBox', `0 0 ${w} ${h}`);
                   clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
                   
                   const svgString = new XMLSerializer().serializeToString(clone);
